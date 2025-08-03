@@ -6,10 +6,10 @@ You can configure which pearls people can load using commands through discord or
 ### Commands
 
 All commands begin with `pearl+`
-`pearl+ toggle <on/off>`
-`pearl+ allow <playerName> <pearlName>`
-`pearl+ deny <playerName> <pearlName>`
-`pearl+ list`
+```pearl+ toggle <on/off>
+pearl+ allow  <playerName>  <pearlName>
+pearl+ deny   <playerName>  <pearlName>
+pearl+ list```
 
 ### Building The Plugin
 
