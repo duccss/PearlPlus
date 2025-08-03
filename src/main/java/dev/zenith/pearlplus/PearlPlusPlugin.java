@@ -31,9 +31,11 @@ public class PearlPlusPlugin implements ZenithProxyPlugin {
     public void onLoad(PluginAPI pluginAPI) {
         API = pluginAPI;
         LOG = pluginAPI.getLogger();
+        LOG.info("Pearl+ Plugin loading...");
         PLUGIN_CONFIG = API.registerConfig("pearl-plus", PearlPlusConfig.class);
         API.registerCommand(new PearlPlusCommand());
         API.registerModule(new PearlPlusModule());
+        LOG.info("Pearl+ Plugin loaded!");
     }
 
     public static void saveConfig() {
