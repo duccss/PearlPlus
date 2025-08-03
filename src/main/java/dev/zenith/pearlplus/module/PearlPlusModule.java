@@ -1,0 +1,87 @@
+package dev.zenith.pearlplus.module;
+
+import com.github.rfresh2.EventConsumer;
+import com.zenith.Proxy;
+import com.zenith.command.api.CommandContext;
+import com.zenith.command.api.CommandSource;
+import com.zenith.discord.Embed;
+import com.zenith.event.chat.WhisperChatEvent;
+import com.zenith.module.api.Module;
+import com.zenith.util.ChatUtil;
+import org.geysermc.mcprotocollib.protocol.data.game.PlayerListEntry;
+
+import java.util.List;
+
+import static com.github.rfresh2.EventConsumer.of;
+import static com.zenith.Globals.*;
+import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
+
+public class PearlPlusModule extends Module {
+    @Override
+    public boolean enabledSetting() {
+        return PLUGIN_CONFIG.enabled;
+    }
+
+    @Override
+    public List<EventConsumer<?>> registerEvents() {
+        return List.of(
+            of(WhisperChatEvent.class, this::onWhisper)
+        );
+    }
+
+    private void onWhisper(WhisperChatEvent event) {
+        if (!PLUGIN_CONFIG.enabled || event.outgoing()) return;
+
+        String msg = event.message().trim().toLowerCase();
+        if (!msg.startsWith("load")) return;
+
+        var parts = msg.split("\\s+", 2);
+        String pearl = parts.length > 1 ? parts[1] : null;
+        var sender = event.sender();
+        String name = sender.getName();
+
+        var allowedList = PLUGIN_CONFIG.allowed.get(name);
+        if (allowedList == null || allowedList.isEmpty()) {
+            info("No pearl(s) assigned to " + name);
+            return;
+        }
+
+        if (pearl == null) {
+            pearl = allowedList.get(0);
+        }
+
+        if (!allowedList.contains(pearl)) {
+            info("Unauthorized load from " + name + " with arg: " + pearl);
+            return;
+        }
+
+        discordAndIngameNotification(Embed.builder()
+            .title("!pl load " + pearl)
+            .addField("Sender", name)
+            .addField("Pearl", pearl)
+            .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
+        );
+
+        var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
+        // carry sender to CommandSource for reply
+        ctx.getData().put("PearlPlusSender", sender);
+        COMMAND.execute(ctx);
+
+        var embed = ctx.getEmbed();
+        String resp = embed.isTitlePresent() ? ChatUtil.sanitizeChatMessage(embed.title()) : "Loaded";
+        discordAndIngameNotification(embed);
+        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, resp));
+    }
+
+    public static class PearlPlusCommandSource implements CommandSource {
+        private static final String SENDER_KEY = "PearlPlusSender";
+
+        public static final PearlPlusCommandSource INSTANCE = new PearlPlusCommandSource();
+        @Override public String name() { return "Pearl+"; }
+        @Override public boolean validateAccountOwner(CommandContext ctx) { return false; }
+        @Override
+        public void logEmbed(CommandContext ctx, Embed embed) {
+            // no-op
+        }
+    }
+}
