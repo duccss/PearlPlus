@@ -33,6 +33,7 @@ public class PearlPlusCommand extends Command {
                 "deny  <playerName> <pearlName>",
                 "list"
             )
+            .aliases("pp")
             .build();
     }
 
