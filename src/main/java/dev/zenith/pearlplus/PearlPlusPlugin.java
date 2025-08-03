@@ -37,16 +37,4 @@ public class PearlPlusPlugin implements ZenithProxyPlugin {
         API.registerModule(new PearlPlusModule());
         LOG.info("Pearl+ Plugin loaded!");
     }
-
-    public static void saveConfig() {
-        try {
-            Path path = Paths.get("config", "pearl-plus.json");
-            Files.createDirectories(path.getParent());
-            new ObjectMapper()
-                .enable(SerializationFeature.INDENT_OUTPUT)
-                .writeValue(path.toFile(), PLUGIN_CONFIG);
-        } catch (IOException e) {
-            LOG.error("Failed to save Pearl+ config", e);
-        }
-    }
 }
