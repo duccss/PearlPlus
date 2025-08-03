@@ -7,7 +7,7 @@ PearlPlus lets you allow players at your base to load pearls through chat whispe
 #### You can use either `pp` or `pearl+`
 
 ```bash
-pearl+ toggle <on/off>
+pearl+ <on/off>
 ```
 ```bash
 pearl+ allow <playerName> <pearlName>
