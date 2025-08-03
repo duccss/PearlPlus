@@ -18,7 +18,6 @@ import static com.zenith.command.brigadier.CustomStringArgumentType.wordWithChar
 import static com.zenith.command.brigadier.ToggleArgumentType.getToggle;
 import static com.zenith.command.brigadier.ToggleArgumentType.toggle;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
-import static dev.zenith.pearlplus.PearlPlusPlugin.saveConfig;
 
 public class PearlPlusCommand extends Command {
     @Override
