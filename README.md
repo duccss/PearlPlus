@@ -19,9 +19,9 @@ pearl+ list
 
 ### Usage
 
-Setup regular pearlloader positions using the built in zenithproxy module. E.g `pearlLoader add <id> <x> <y> <z>`. Add a user to pearl+'s config using `pearl+ allow duccss <id>`. That player can now whisper "load" to the zenith bot and the bot will load the pearl. The first pearl added to a user is loaded when the whisper is sent. Players can add the pearl id after "load" to have a specific pearl loaded.
+Setup regular pearlloader positions using the built in zenithproxy module. E.g `pearlLoader add <id> <x> <y> <z>`. Add a user to pearl+'s config using `pearl+ allow <username> <id>`. That player can now whisper "load" to the zenith bot and the bot will load the pearl. The first pearl added to a user is loaded when the whisper is sent. Players can add the pearl id after "load" to have a specific pearl loaded.
 ```bash
-/whisper <botName> load <optionalPearlID> 
+/whisper <botName> load <optionalID> 
 ```
 
 ### Building The Plugin
