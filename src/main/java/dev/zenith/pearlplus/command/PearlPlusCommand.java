@@ -46,7 +46,6 @@ public class PearlPlusCommand extends Command {
                 boolean enabled = getToggle(c, "toggle");
                 PLUGIN_CONFIG.enabled = enabled;
                 MODULE.get(PearlPlusModule.class).syncEnabledFromConfig();
-                saveConfig();
                 c.getSource().getEmbed()
                   .title("Pearl+ " + toggleStrCaps(enabled));
                 return 0;
@@ -61,7 +60,6 @@ public class PearlPlusCommand extends Command {
                     List<String> list = PLUGIN_CONFIG.allowed
                       .computeIfAbsent(name, k -> new ArrayList<>());
                     if (!list.contains(pearl)) list.add(pearl);
-                    saveConfig();
 
                     c.getSource().getEmbed()
                       .title("Allowed " + name + " → " + pearl);
@@ -79,7 +77,6 @@ public class PearlPlusCommand extends Command {
                         list.remove(pearl);
                         if (list.isEmpty()) PLUGIN_CONFIG.allowed.remove(name);
                     }
-                    saveConfig();
 
                     c.getSource().getEmbed()
                       .title("Removed " + pearl + " from " + name);
