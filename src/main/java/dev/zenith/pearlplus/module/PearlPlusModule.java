@@ -11,6 +11,7 @@ import com.zenith.util.ChatUtil;
 import org.geysermc.mcprotocollib.protocol.data.game.PlayerListEntry;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.github.rfresh2.EventConsumer.of;
 import static com.zenith.Globals.*;
@@ -39,10 +40,11 @@ public class PearlPlusModule extends Module {
         String pearl = parts.length > 1 ? parts[1] : null;
         var sender = event.sender();
         String name = sender.getName();
+        UUID uuid = sender.getProfileId();
 
-        var allowedList = PLUGIN_CONFIG.allowed.get(name);
+        var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
         if (allowedList == null || allowedList.isEmpty()) {
-            info("No pearl(s) assigned to " + name);
+            info("No pearls assigned to " + name);
             return;
         }
 
@@ -56,7 +58,7 @@ public class PearlPlusModule extends Module {
         }
 
         discordAndIngameNotification(Embed.builder()
-            .title("!pl load " + pearl)
+            .title("Loading " + pearl)
             .addField("Sender", name)
             .addField("Pearl", pearl)
             .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
@@ -81,7 +83,6 @@ public class PearlPlusModule extends Module {
         @Override public boolean validateAccountOwner(CommandContext ctx) { return false; }
         @Override
         public void logEmbed(CommandContext ctx, Embed embed) {
-            // no-op
         }
     }
 }
