@@ -44,7 +44,7 @@ public class PearlPlusModule extends Module {
 
         var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
         if (allowedList == null || allowedList.isEmpty()) {
-            info("No pearl(s) assigned to " + name);
+            info("No pearls assigned to " + name);
             return;
         }
 
@@ -58,7 +58,7 @@ public class PearlPlusModule extends Module {
         }
 
         discordAndIngameNotification(Embed.builder()
-            .title("!pl load " + pearl)
+            .title("Loading " + pearl)
             .addField("Sender", name)
             .addField("Pearl", pearl)
             .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
@@ -83,7 +83,6 @@ public class PearlPlusModule extends Module {
         @Override public boolean validateAccountOwner(CommandContext ctx) { return false; }
         @Override
         public void logEmbed(CommandContext ctx, Embed embed) {
-            // no-op
         }
     }
 }
