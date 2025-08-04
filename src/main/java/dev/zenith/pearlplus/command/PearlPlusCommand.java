@@ -6,11 +6,16 @@ import com.zenith.command.api.CommandCategory;
 import com.zenith.command.api.CommandContext;
 import com.zenith.command.api.CommandUsage;
 import com.zenith.discord.Embed;
+import com.zenith.feature.api.minetools.MinetoolsApi;
+import com.zenith.feature.api.minetools.model.MinetoolsUuidResponse;
+import com.zenith.feature.api.minetools.model.MinetoolsProfileResponse;
 import dev.zenith.pearlplus.PearlPlusPlugin;
 import dev.zenith.pearlplus.module.PearlPlusModule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static com.zenith.Globals.MODULE;
 import static com.zenith.command.brigadier.CustomStringArgumentType.getString;
@@ -56,12 +61,19 @@ public class PearlPlusCommand extends Command {
                     String name  = getString(c, "playerName");
                     String pearl = getString(c, "pearlName");
 
-                    List<String> list = PLUGIN_CONFIG.allowed
-                      .computeIfAbsent(name, k -> new ArrayList<>());
+                    Optional<MinetoolsUuidResponse> result =
+                        MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                    if (result.isEmpty()) {
+                        c.getSource().getEmbed().title("Invalid username: " + name);
+                        return 0;
+                    }
+
+                    UUID uuid = result.get().uuid();
+                    List<String> list = PLUGIN_CONFIG.allowed.computeIfAbsent(uuid, k -> new ArrayList<>());
                     if (!list.contains(pearl)) list.add(pearl);
 
                     c.getSource().getEmbed()
-                      .title("Allowed " + name + " → " + pearl);
+                      .title("Allowed " + name + " → pearl " + pearl);
                     return 0;
               }))))
 
@@ -71,23 +83,35 @@ public class PearlPlusCommand extends Command {
                     String name  = getString(c, "playerName");
                     String pearl = getString(c, "pearlName");
 
-                    List<String> list = PLUGIN_CONFIG.allowed.get(name);
+                    Optional<MinetoolsUuidResponse> result =
+                        MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                    if (result.isEmpty()) {
+                        c.getSource().getEmbed().title("Invalid username: " + name);
+                        return 0;
+                    }
+
+                    UUID uuid = result.get().uuid();
+                    List<String> list = PLUGIN_CONFIG.allowed.get(uuid);
                     if (list != null) {
                         list.remove(pearl);
-                        if (list.isEmpty()) PLUGIN_CONFIG.allowed.remove(name);
+                        if (list.isEmpty()) PLUGIN_CONFIG.allowed.remove(uuid);
                     }
 
                     c.getSource().getEmbed()
-                      .title("Removed " + pearl + " from " + name);
+                      .title("Removed pearl " + pearl + " from " + name);
                     return 0;
               }))))
 
             .then(literal("list").executes(c -> {
                 Embed e = c.getSource().getEmbed()
                   .title("Allowed Entries (" + PLUGIN_CONFIG.allowed.size() + ")");
-                PLUGIN_CONFIG.allowed.forEach((player, pearls) ->
-                  e.addField(player, String.join(", ", pearls))
-                );
+                PLUGIN_CONFIG.allowed.forEach((uuid, pearls) -> {
+                    String name = MinetoolsApi.INSTANCE.getProfileFromUUID(uuid)
+                        .map(MinetoolsProfileResponse::name)
+                        .orElse(uuid.toString());
+
+                    e.addField(name, String.join(", ", pearls));
+                });
                 return 0;
             }));
     }
