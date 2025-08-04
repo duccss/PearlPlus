@@ -11,6 +11,7 @@ import com.zenith.util.ChatUtil;
 import org.geysermc.mcprotocollib.protocol.data.game.PlayerListEntry;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.github.rfresh2.EventConsumer.of;
 import static com.zenith.Globals.*;
@@ -39,8 +40,9 @@ public class PearlPlusModule extends Module {
         String pearl = parts.length > 1 ? parts[1] : null;
         var sender = event.sender();
         String name = sender.getName();
+        UUID uuid = sender.getProfileId();
 
-        var allowedList = PLUGIN_CONFIG.allowed.get(name);
+        var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
         if (allowedList == null || allowedList.isEmpty()) {
             info("No pearl(s) assigned to " + name);
             return;
