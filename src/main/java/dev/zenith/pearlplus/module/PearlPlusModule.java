@@ -36,8 +36,6 @@ public class PearlPlusModule extends Module {
         String msg = event.message().trim().toLowerCase();
         if (!msg.startsWith("load")) return;
 
-        var parts = msg.split("\\s+", 2);
-        String pearl = parts.length > 1 ? parts[1] : null;
         var sender = event.sender();
         String name = sender.getName();
         UUID uuid = sender.getProfileId();
@@ -45,27 +43,49 @@ public class PearlPlusModule extends Module {
         var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
         if (allowedList == null || allowedList.isEmpty()) {
             info("No pearls assigned to " + name);
+        return;
+        }
+
+        String[] parts = msg.split("\\s+");
+        String pearl;
+
+        if (!PLUGIN_CONFIG.allowNoiseAfterPearl) {
+            if (parts.length > 2) {
+                info("Extra arguments not allowed for " + name);
             return;
+            }
+        } else {
+            if (parts.length > 3) {
+                info("Too many arguments from " + name);
+            return;
+            }
+            if (parts.length == 3 && !allowedList.contains(parts[1])) {
+                info("Noise before pearl not allowed for " + name);
+            return;
+            }
         }
-
-        if (pearl == null) {
+        if (parts.length == 1) {
             pearl = allowedList.get(0);
+        } else {
+            String candidate = parts[1];
+            pearl = (PLUGIN_CONFIG.allowNoiseAfterPearl && !allowedList.contains(candidate))
+                ? allowedList.get(0)
+                : candidate;
         }
-
+        
         if (!allowedList.contains(pearl)) {
             info("Unauthorized load from " + name + " with arg: " + pearl);
             return;
         }
-
+        
         discordAndIngameNotification(Embed.builder()
-            .title("Loading " + pearl)
+            .title("Recieved Whisper")
             .addField("Sender", name)
             .addField("Pearl", pearl)
             .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
         );
 
         var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
-        // carry sender to CommandSource for reply
         ctx.getData().put("PearlPlusSender", sender);
         COMMAND.execute(ctx);
 

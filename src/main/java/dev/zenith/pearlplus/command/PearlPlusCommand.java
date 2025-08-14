@@ -35,7 +35,8 @@ public class PearlPlusCommand extends Command {
                 "toggle <on/off>",
                 "allow <playerName> <pearlName>",
                 "deny  <playerName> <pearlName>",
-                "list"
+                "list",
+                "strict <on/off>"
             )
             .aliases("pp")
             .build();
@@ -113,6 +114,15 @@ public class PearlPlusCommand extends Command {
                     e.addField(name, String.join(", ", pearls));
                 });
                 return 0;
-            }));
+            }))
+            
+            .then(literal("strict")
+                  .then(argument("toggle", toggle()).executes(c -> {
+                      boolean strict = getToggle(c, "toggle");
+                      PLUGIN_CONFIG.allowNoiseAfterPearl = !strict;
+                      c.getSource().getEmbed()
+                          .title("Pearl+ strict " + toggleStrCaps(strict));
+                      return 0;
+            })));
     }
 }
