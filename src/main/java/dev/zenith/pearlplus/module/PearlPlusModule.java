@@ -80,21 +80,21 @@ public class PearlPlusModule extends Module {
         }
 
         discordAndIngameNotification(Embed.builder()
-                                     .title("Loading " + pearl)
-                                     .addField("Sender", name)
-                                     .addField("Pearl", pearl)
-                                     .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
-                                    );
+            .title("Recieved Whisper")
+            .addField("Sender", name)
+            .addField("Pearl", pearl)
+            .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
+        );
 
-    var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
-    ctx.getData().put("PearlPlusSender", sender);
-    COMMAND.execute(ctx);
+        var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
+        ctx.getData().put("PearlPlusSender", sender);
+        COMMAND.execute(ctx);
 
-    var embed = ctx.getEmbed();
-    String resp = embed.isTitlePresent() ? ChatUtil.sanitizeChatMessage(embed.title()) : "Loaded";
-    discordAndIngameNotification(embed);
-    sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, resp));
-}
+        var embed = ctx.getEmbed();
+        String resp = embed.isTitlePresent() ? ChatUtil.sanitizeChatMessage(embed.title()) : "Loaded";
+        discordAndIngameNotification(embed);
+        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, resp));
+    }
 
     public static class PearlPlusCommandSource implements CommandSource {
         private static final String SENDER_KEY = "PearlPlusSender";
