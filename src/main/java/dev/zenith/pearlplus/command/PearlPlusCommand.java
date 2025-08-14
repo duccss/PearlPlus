@@ -35,7 +35,8 @@ public class PearlPlusCommand extends Command {
                 "toggle <on/off>",
                 "allow <playerName> <pearlName>",
                 "deny  <playerName> <pearlName>",
-                "list"
+                "list",
+                "strict <on/off>"
             )
             .aliases("pp")
             .build();
