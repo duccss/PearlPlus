@@ -49,16 +49,7 @@ public class PearlPlusModule extends Module {
     String[] parts = msg.split("\\s+");
     String pearl;
 
-    if (parts.length == 1) {
-        pearl = allowedList.get(0);
-    } else {
-        pearl = parts[1];
-    }
-        
-    if (!allowedList.contains(pearl)) {
-        info("Unauthorized load from " + name + " with arg: " + pearl);
-        return;
-    }
+
     if (!PLUGIN_CONFIG.allowNoiseAfterPearl) {
         if (parts.length > 2) {
             info("Extra arguments not allowed for " + name);
@@ -69,14 +60,31 @@ public class PearlPlusModule extends Module {
             info("Too many arguments from " + name);
             return;
         }
+        if (parts.length == 3 && !allowedList.contains(parts[1])) {
+            info("Noise before pearl not allowed for " + name);
+            return;
+        }
     }
+        if (parts.length == 1) {
+            pearl = allowedList.get(0);
+        } else {
+            String candidate = parts[1];
+            pearl = (PLUGIN_CONFIG.allowNoiseAfterPearl && !allowedList.contains(candidate))
+                ? allowedList.get(0)
+                : candidate;
+        }
+        
+        if (!allowedList.contains(pearl)) {
+            info("Unauthorized load from " + name + " with arg: " + pearl);
+            return;
+        }
 
-    discordAndIngameNotification(Embed.builder()
-        .title("Loading " + pearl)
-        .addField("Sender", name)
-        .addField("Pearl", pearl)
-        .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
-    );
+        discordAndIngameNotification(Embed.builder()
+                                     .title("Loading " + pearl)
+                                     .addField("Sender", name)
+                                     .addField("Pearl", pearl)
+                                     .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
+                                    );
 
     var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
     ctx.getData().put("PearlPlusSender", sender);
