@@ -113,6 +113,15 @@ public class PearlPlusCommand extends Command {
                     e.addField(name, String.join(", ", pearls));
                 });
                 return 0;
-            }));
+            }))
+            
+            .then(literal("strict")
+                  .then(argument("toggle", toggle()).executes(c -> {
+                      boolean strict = getToggle(c, "toggle");
+                      PLUGIN_CONFIG.allowNoiseAfterPearl = !strict;
+                      c.getSource().getEmbed()
+                          .title("Pearl+ strict " + toggleStrCaps(strict));
+                      return 0;
+            })));
     }
 }
