@@ -31,49 +31,62 @@ public class PearlPlusModule extends Module {
     }
 
     private void onWhisper(WhisperChatEvent event) {
-        if (!PLUGIN_CONFIG.enabled || event.outgoing()) return;
+    if (!PLUGIN_CONFIG.enabled || event.outgoing()) return;
 
-        String msg = event.message().trim().toLowerCase();
-        if (!msg.startsWith("load")) return;
+    String msg = event.message().trim().toLowerCase();
+    if (!msg.startsWith("load")) return;
 
-        var parts = msg.split("\\s+", 2);
-        String pearl = parts.length > 1 ? parts[1] : null;
-        var sender = event.sender();
-        String name = sender.getName();
-        UUID uuid = sender.getProfileId();
+    var sender = event.sender();
+    String name = sender.getName();
+    UUID uuid = sender.getProfileId();
 
-        var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
-        if (allowedList == null || allowedList.isEmpty()) {
-            info("No pearls assigned to " + name);
-            return;
-        }
-
-        if (pearl == null) {
-            pearl = allowedList.get(0);
-        }
-
-        if (!allowedList.contains(pearl)) {
-            info("Unauthorized load from " + name + " with arg: " + pearl);
-            return;
-        }
-
-        discordAndIngameNotification(Embed.builder()
-            .title("Loading " + pearl)
-            .addField("Sender", name)
-            .addField("Pearl", pearl)
-            .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
-        );
-
-        var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
-        // carry sender to CommandSource for reply
-        ctx.getData().put("PearlPlusSender", sender);
-        COMMAND.execute(ctx);
-
-        var embed = ctx.getEmbed();
-        String resp = embed.isTitlePresent() ? ChatUtil.sanitizeChatMessage(embed.title()) : "Loaded";
-        discordAndIngameNotification(embed);
-        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, resp));
+    var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
+    if (allowedList == null || allowedList.isEmpty()) {
+        info("No pearls assigned to " + name);
+        return;
     }
+
+    String[] parts = msg.split("\\s+");
+    String pearl;
+
+    if (parts.length == 1) {
+        pearl = allowedList.get(0);
+    } else {
+        pearl = parts[1];
+    }
+        
+    if (!allowedList.contains(pearl)) {
+        info("Unauthorized load from " + name + " with arg: " + pearl);
+        return;
+    }
+    if (!PLUGIN_CONFIG.allowNoiseAfterPearl) {
+        if (parts.length > 2) {
+            info("Extra arguments not allowed for " + name);
+            return;
+        }
+    } else {
+        if (parts.length > 3) {
+            info("Too many arguments from " + name);
+            return;
+        }
+    }
+
+    discordAndIngameNotification(Embed.builder()
+        .title("Loading " + pearl)
+        .addField("Sender", name)
+        .addField("Pearl", pearl)
+        .thumbnail(Proxy.getInstance().getPlayerBodyURL(sender.getProfileId()).toString())
+    );
+
+    var ctx = CommandContext.create("pl load " + pearl, PearlPlusCommandSource.INSTANCE);
+    ctx.getData().put("PearlPlusSender", sender);
+    COMMAND.execute(ctx);
+
+    var embed = ctx.getEmbed();
+    String resp = embed.isTitlePresent() ? ChatUtil.sanitizeChatMessage(embed.title()) : "Loaded";
+    discordAndIngameNotification(embed);
+    sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, resp));
+}
 
     public static class PearlPlusCommandSource implements CommandSource {
         private static final String SENDER_KEY = "PearlPlusSender";
