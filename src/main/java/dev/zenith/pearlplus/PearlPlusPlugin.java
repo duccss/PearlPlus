@@ -15,7 +15,7 @@ import java.io.IOException;
 
 @Plugin(
     id = "pearl-plus",
-    version = "1.1.0",
+    version = "1.1.1",
     description = "Load pearls through whispers without whitelist.",
     url = "https://github.com/duccss/",
     authors = {"duccss"},
