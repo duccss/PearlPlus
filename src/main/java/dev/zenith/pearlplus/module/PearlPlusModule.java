@@ -31,40 +31,39 @@ public class PearlPlusModule extends Module {
     }
 
     private void onWhisper(WhisperChatEvent event) {
-    if (!PLUGIN_CONFIG.enabled || event.outgoing()) return;
+        if (!PLUGIN_CONFIG.enabled || event.outgoing()) return;
 
-    String msg = event.message().trim().toLowerCase();
-    if (!msg.startsWith("load")) return;
+        String msg = event.message().trim().toLowerCase();
+        if (!msg.startsWith("load")) return;
 
-    var sender = event.sender();
-    String name = sender.getName();
-    UUID uuid = sender.getProfileId();
+        var sender = event.sender();
+        String name = sender.getName();
+        UUID uuid = sender.getProfileId();
 
-    var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
-    if (allowedList == null || allowedList.isEmpty()) {
-        info("No pearls assigned to " + name);
+        var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
+        if (allowedList == null || allowedList.isEmpty()) {
+            info("No pearls assigned to " + name);
         return;
-    }
-
-    String[] parts = msg.split("\\s+");
-    String pearl;
-
-
-    if (!PLUGIN_CONFIG.allowNoiseAfterPearl) {
-        if (parts.length > 2) {
-            info("Extra arguments not allowed for " + name);
-            return;
         }
-    } else {
-        if (parts.length > 3) {
-            info("Too many arguments from " + name);
+
+        String[] parts = msg.split("\\s+");
+        String pearl;
+
+        if (!PLUGIN_CONFIG.allowNoiseAfterPearl) {
+            if (parts.length > 2) {
+                info("Extra arguments not allowed for " + name);
             return;
-        }
-        if (parts.length == 3 && !allowedList.contains(parts[1])) {
-            info("Noise before pearl not allowed for " + name);
+            }
+        } else {
+            if (parts.length > 3) {
+                info("Too many arguments from " + name);
             return;
+            }
+            if (parts.length == 3 && !allowedList.contains(parts[1])) {
+                info("Noise before pearl not allowed for " + name);
+            return;
+            }
         }
-    }
         if (parts.length == 1) {
             pearl = allowedList.get(0);
         } else {
@@ -78,7 +77,7 @@ public class PearlPlusModule extends Module {
             info("Unauthorized load from " + name + " with arg: " + pearl);
             return;
         }
-
+        
         discordAndIngameNotification(Embed.builder()
             .title("Recieved Whisper")
             .addField("Sender", name)
