@@ -4,8 +4,8 @@ import com.zenith.plugin.api.PluginAPI;
 import com.zenith.plugin.api.Plugin;
 import com.zenith.plugin.api.ZenithProxyPlugin;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import dev.zenith.pearlplus.command.PearlPlusCommand;
-import dev.zenith.pearlplus.module.PearlPlusModule;
+import dev.zenith.pearlplus.command.AutoLoadCommand;
+import dev.zenith.pearlplus.module.AutoLoadModule;
 
 @Plugin(
     id = "pearl-plus",
@@ -27,8 +27,8 @@ public class PearlPlusPlugin implements ZenithProxyPlugin {
         LOG = pluginAPI.getLogger();
         LOG.info("Pearl+ Plugin loading...");
         PLUGIN_CONFIG = API.registerConfig("pearl-plus", PearlPlusConfig.class);
-        API.registerCommand(new PearlPlusCommand());
-        API.registerModule(new PearlPlusModule());
+        API.registerCommand(new AutoLoadCommand());
+        API.registerModule(new AutoLoadModule());
         LOG.info("Pearl+ Plugin loaded!");
     }
 }

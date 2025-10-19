@@ -9,7 +9,7 @@ import com.zenith.discord.Embed;
 import com.zenith.feature.api.minetools.MinetoolsApi;
 import com.zenith.feature.api.minetools.model.MinetoolsUuidResponse;
 import com.zenith.feature.api.minetools.model.MinetoolsProfileResponse;
-import dev.zenith.pearlplus.module.PearlPlusModule;
+import dev.zenith.pearlplus.module.AutoLoadModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ import static com.zenith.command.brigadier.ToggleArgumentType.getToggle;
 import static com.zenith.command.brigadier.ToggleArgumentType.toggle;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
 
-public class PearlPlusCommand extends Command {
+public class AutoLoadCommand extends Command {
     @Override
     public CommandUsage commandUsage() {
         return CommandUsage.builder()
@@ -48,8 +48,8 @@ public class PearlPlusCommand extends Command {
 
             .then(argument("toggle", toggle()).executes(c -> {
                 boolean enabled = getToggle(c, "toggle");
-                PLUGIN_CONFIG.enabled = enabled;
-                MODULE.get(PearlPlusModule.class).syncEnabledFromConfig();
+                PLUGIN_CONFIG.autoLoad.enabled = enabled;
+                MODULE.get(AutoLoadModule.class).syncEnabledFromConfig();
                 c.getSource().getEmbed()
                   .title("Pearl+ " + toggleStrCaps(enabled));
                 return 0;
@@ -69,7 +69,7 @@ public class PearlPlusCommand extends Command {
                     }
 
                     UUID uuid = result.get().uuid();
-                    List<String> list = PLUGIN_CONFIG.allowed.computeIfAbsent(uuid, k -> new ArrayList<>());
+                    List<String> list = PLUGIN_CONFIG.autoLoad.allowed.computeIfAbsent(uuid, k -> new ArrayList<>());
                     if (!list.contains(pearl)) list.add(pearl);
 
                     c.getSource().getEmbed()
@@ -91,10 +91,10 @@ public class PearlPlusCommand extends Command {
                     }
 
                     UUID uuid = result.get().uuid();
-                    List<String> list = PLUGIN_CONFIG.allowed.get(uuid);
+                    List<String> list = PLUGIN_CONFIG.autoLoad.allowed.get(uuid);
                     if (list != null) {
                         list.remove(pearl);
-                        if (list.isEmpty()) PLUGIN_CONFIG.allowed.remove(uuid);
+                        if (list.isEmpty()) PLUGIN_CONFIG.autoLoad.allowed.remove(uuid);
                     }
 
                     c.getSource().getEmbed()
@@ -104,8 +104,8 @@ public class PearlPlusCommand extends Command {
 
             .then(literal("list").executes(c -> {
                 Embed e = c.getSource().getEmbed()
-                  .title("Allowed Entries (" + PLUGIN_CONFIG.allowed.size() + ")");
-                PLUGIN_CONFIG.allowed.forEach((uuid, pearls) -> {
+                  .title("Allowed Entries (" + PLUGIN_CONFIG.autoLoad.allowed.size() + ")");
+                PLUGIN_CONFIG.autoLoad.allowed.forEach((uuid, pearls) -> {
                     String name = MinetoolsApi.INSTANCE.getProfileFromUUID(uuid)
                         .map(MinetoolsProfileResponse::name)
                         .orElse(uuid.toString());
@@ -118,7 +118,7 @@ public class PearlPlusCommand extends Command {
             .then(literal("strict")
                   .then(argument("toggle", toggle()).executes(c -> {
                       boolean strict = getToggle(c, "toggle");
-                      PLUGIN_CONFIG.allowNoiseAfterPearl = !strict;
+                      PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl = !strict;
                       c.getSource().getEmbed()
                           .title("Pearl+ strict " + toggleStrCaps(strict));
                       return 0;

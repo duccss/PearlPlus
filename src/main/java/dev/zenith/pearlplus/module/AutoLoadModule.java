@@ -16,10 +16,10 @@ import static com.github.rfresh2.EventConsumer.of;
 import static com.zenith.Globals.*;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
 
-public class PearlPlusModule extends Module {
+public class AutoLoadModule extends Module {
     @Override
     public boolean enabledSetting() {
-        return PLUGIN_CONFIG.enabled;
+        return PLUGIN_CONFIG.autoLoad.enabled;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class PearlPlusModule extends Module {
     }
 
     private void onWhisper(WhisperChatEvent event) {
-        if (!PLUGIN_CONFIG.enabled || event.outgoing()) return;
+        if (!PLUGIN_CONFIG.autoLoad.enabled || event.outgoing()) return;
 
         String msg = event.message().trim().toLowerCase();
         if (!msg.startsWith("load")) return;
@@ -39,7 +39,7 @@ public class PearlPlusModule extends Module {
         String name = sender.getName();
         UUID uuid = sender.getProfileId();
 
-        var allowedList = PLUGIN_CONFIG.allowed.get(uuid);
+        var allowedList = PLUGIN_CONFIG.autoLoad.allowed.get(uuid);
         if (allowedList == null || allowedList.isEmpty()) {
             info("No pearls assigned to " + name);
         return;
@@ -48,7 +48,7 @@ public class PearlPlusModule extends Module {
         String[] parts = msg.split("\\s+");
         String pearl;
 
-        if (!PLUGIN_CONFIG.allowNoiseAfterPearl) {
+        if (!PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl) {
             if (parts.length > 2) {
                 info("Extra arguments not allowed for " + name);
             return;
@@ -67,7 +67,7 @@ public class PearlPlusModule extends Module {
             pearl = allowedList.get(0);
         } else {
             String candidate = parts[1];
-            pearl = (PLUGIN_CONFIG.allowNoiseAfterPearl && !allowedList.contains(candidate))
+            pearl = (PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl && !allowedList.contains(candidate))
                 ? allowedList.get(0)
                 : candidate;
         }
