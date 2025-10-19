@@ -8,7 +8,6 @@ import com.zenith.discord.Embed;
 import com.zenith.event.chat.WhisperChatEvent;
 import com.zenith.module.api.Module;
 import com.zenith.util.ChatUtil;
-import org.geysermc.mcprotocollib.protocol.data.game.PlayerListEntry;
 
 import java.util.List;
 import java.util.UUID;

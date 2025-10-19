@@ -4,18 +4,12 @@ import com.zenith.plugin.api.PluginAPI;
 import com.zenith.plugin.api.Plugin;
 import com.zenith.plugin.api.ZenithProxyPlugin;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import dev.zenith.pearlplus.command.PearlPlusCommand;
 import dev.zenith.pearlplus.module.PearlPlusModule;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
-import java.io.IOException;
 
 @Plugin(
     id = "pearl-plus",
-    version = "1.1.1",
+    version = BuildConstants.VERSION,
     description = "Load pearls through whispers without whitelist.",
     url = "https://github.com/duccss/",
     authors = {"duccss"},

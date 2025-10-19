@@ -9,7 +9,6 @@ import com.zenith.discord.Embed;
 import com.zenith.feature.api.minetools.MinetoolsApi;
 import com.zenith.feature.api.minetools.model.MinetoolsUuidResponse;
 import com.zenith.feature.api.minetools.model.MinetoolsProfileResponse;
-import dev.zenith.pearlplus.PearlPlusPlugin;
 import dev.zenith.pearlplus.module.PearlPlusModule;
 
 import java.util.ArrayList;
