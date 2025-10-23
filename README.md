@@ -23,6 +23,12 @@ pearl+ list
 ```bash
 pearl+ strict <on/off>
 ```
+```bash
+pearl+ autodetect <on/off>
+```
+```bash
+pearl+ autodetect temp <on/off>
+```
 
 ### Usage
 

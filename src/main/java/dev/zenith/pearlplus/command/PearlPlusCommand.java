@@ -10,6 +10,7 @@ import com.zenith.feature.api.minetools.MinetoolsApi;
 import com.zenith.feature.api.minetools.model.MinetoolsUuidResponse;
 import com.zenith.feature.api.minetools.model.MinetoolsProfileResponse;
 import dev.zenith.pearlplus.module.AutoLoadModule;
+import dev.zenith.pearlplus.module.AutoDetectModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,19 +24,21 @@ import static com.zenith.command.brigadier.ToggleArgumentType.getToggle;
 import static com.zenith.command.brigadier.ToggleArgumentType.toggle;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
 
-public class AutoLoadCommand extends Command {
+public class PearlPlusCommand extends Command {
     @Override
     public CommandUsage commandUsage() {
         return CommandUsage.builder()
-            .name("pearl+")
+            .name("pearlplus")
             .category(CommandCategory.MODULE)
             .description("Allow players to load pearls without whitelist through whispers.")
             .usageLines(
-                "toggle <on/off>",
+                "<on/off>",
                 "allow <playerName> <pearlName>",
                 "deny  <playerName> <pearlName>",
                 "list",
-                "strict <on/off>"
+                "strict <on/off>",
+                "autodetect <on/off>",
+                "autodetect temp <on/off>"
             )
             .aliases("pp")
             .build();
@@ -43,7 +46,7 @@ public class AutoLoadCommand extends Command {
 
     @Override
     public LiteralArgumentBuilder<CommandContext> register() {
-        return command("pearl+")
+        return command("pearlplus")
             .requires(Command::validateAccountOwner)
 
             .then(argument("toggle", toggle()).executes(c -> {
@@ -51,7 +54,7 @@ public class AutoLoadCommand extends Command {
                 PLUGIN_CONFIG.autoLoad.enabled = enabled;
                 MODULE.get(AutoLoadModule.class).syncEnabledFromConfig();
                 c.getSource().getEmbed()
-                  .title("Pearl+ " + toggleStrCaps(enabled));
+                  .title("PearlPlus " + toggleStrCaps(enabled));
                 return 0;
             }))
 
@@ -120,8 +123,36 @@ public class AutoLoadCommand extends Command {
                       boolean strict = getToggle(c, "toggle");
                       PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl = !strict;
                       c.getSource().getEmbed()
-                          .title("Pearl+ strict " + toggleStrCaps(strict));
+                          .title("PearlPlus strict " + toggleStrCaps(strict));
                       return 0;
-            })));
+            })))
+
+            .then(literal("autodetect")
+                        .then(argument("toggle", toggle()).executes(c -> {
+                            boolean enabled = getToggle(c, "toggle");
+                            PLUGIN_CONFIG.autoDetect.enabled = enabled;
+
+                            AutoDetectModule module = MODULE.get(AutoDetectModule.class);
+                            module.syncEnabledFromConfig();
+                            if (enabled) {
+                                module.markExistingPearls();
+                            }
+
+                            c.getSource().getEmbed()
+                                    .title("PearlPlus Autodetect " + toggleStrCaps(enabled));
+                            return 0;
+                        }))
+                        .then(literal("temp")
+                                .then(argument("toggle", toggle()).executes(c -> {
+                                    boolean enabled = getToggle(c, "toggle");
+                                    PLUGIN_CONFIG.autoDetect.temporaryMode = enabled;
+
+                                    AutoDetectModule module = MODULE.get(AutoDetectModule.class);
+                                    module.onTemporaryModeToggle(enabled);
+
+                                    c.getSource().getEmbed()
+                                            .title("PearlPlus Autodetect Temp Mode " + toggleStrCaps(enabled));
+                                    return 0;
+                                }))));
     }
 }

@@ -59,7 +59,7 @@ public class AutoLoadModule extends Module {
             return;
             }
             if (parts.length == 3 && !allowedList.contains(parts[1])) {
-                info("Noise before pearl not allowed for " + name);
+                info("Noise after pearl not allowed for " + name);
             return;
             }
         }
@@ -98,7 +98,7 @@ public class AutoLoadModule extends Module {
         private static final String SENDER_KEY = "PearlPlusSender";
 
         public static final PearlPlusCommandSource INSTANCE = new PearlPlusCommandSource();
-        @Override public String name() { return "Pearl+"; }
+        @Override public String name() { return "PearlPlus"; }
         @Override public boolean validateAccountOwner(CommandContext ctx) { return false; }
         @Override
         public void logEmbed(CommandContext ctx, Embed embed) {
