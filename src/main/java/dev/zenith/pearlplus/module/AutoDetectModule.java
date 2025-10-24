@@ -1,6 +1,7 @@
 package dev.zenith.pearlplus.module;
 
 import com.github.rfresh2.EventConsumer;
+import com.zenith.Proxy;
 import com.zenith.cache.data.entity.Entity;
 import com.zenith.discord.Embed;
 import com.zenith.event.client.ClientBotTick;
@@ -21,7 +22,7 @@ import static com.github.rfresh2.EventConsumer.of;
 
 public class AutoDetectModule extends Module {
     private static final long STABLE_LOCATION_DURATION_MS = 3_000L;
-    private static final long STORED_PEARL_REMOVAL_GRACE_MS = 10_000L;
+    private static final long STORED_PEARL_REMOVAL_GRACE_MS = 60_000L;
     private static final int POSITION_HISTORY_LIMIT = 8;
 
     private final Map<Integer, TrackedPearl> trackedPearls = new HashMap<>();
@@ -192,6 +193,10 @@ public class AutoDetectModule extends Module {
 
     private void handleTemporaryRemoval(TrackedPearl trackedPearl) {
         if (!isTemporaryModeEnabled()) {
+            return;
+        }
+        Proxy proxy = Proxy.getInstance();
+        if (proxy == null || !proxy.isConnected() || proxy.isInQueue()) {
             return;
         }
         if (!trackedPearl.isRegistered()) {
