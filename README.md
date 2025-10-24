@@ -1,49 +1,54 @@
 ## PearlPlus
 
-PearlPlus lets you allow players at your base to load pearls through chat whispers without granting any other permissions. You can configure which pearls players can load using commands through discord or console. The config is saved to `plugins/config/pearl-plus.json`
+PearlPlus automatically detects new stasis pearls and registers them with zeniths built in pearl loader. Pearl throwers are then allowed to load these pearls through chat whispers.
+The config is saved to `plugins/config/pearlplus.json`
 
 Download the [lastest build](https://github.com/duccss/PearlPlus/releases/latest) and place the jar file in your proxys plugin folder.
 
 ### Management Commands
 
-#### You can use either `pp` or `pearl+`
+#### You can use either `pp` or `pearlplus`
 
 ```bash
-pearl+ <on/off>
+pearlplus <on/off>
 ```
 ```bash
-pearl+ allow <playerName> <pearlName>
+pearlplus allow/deny playerName pearlID
 ```
 ```bash
-pearl+ deny <playerName> <pearlName>
+pearlplus list
 ```
 ```bash
-pearl+ list
+pearlplus strict on/off
 ```
 ```bash
-pearl+ strict <on/off>
+pearlplus autodetect on/off
 ```
 ```bash
-pearl+ autodetect <on/off>
-```
-```bash
-pearl+ autodetect temp <on/off>
+pearlplus autodetect temp on/off
 ```
 
 ### Usage
 
-Setup regular pearlloader positions using the built in zenithproxy module. E.g `pearlLoader add <id> <x> <y> <z>`. Add a player to pearl+'s config using `pearl+ allow <username> <id>`. That player can now whisper `load` to the zenith bot and the bot will load the pearl. Players with multiple pearls can add the ID after `load` to have a specific pearl loaded.
+Simply throw a new ender pearl and once it becomes stable the bot will register a pearl loader entry with zenith, setting the pearlID as the throwers name with an incrementing number. That player can now whisper `load` to the zenith bot and the bot will load the pearl. Players with multiple pearls can add the pearlID after `load` to have a specific pearl loaded. Players will recieve the pearlID from a whisper when a new pearl is registered.
 ```bash
 /w <botName> load <optionalID> 
 ```
+Temp mode automatically removes pearl positions where a pearl isnt detected. May be buggy.
+
+Can be enabled with `pearlplus autodetect temp on` 
+
+#### Manual setup
+Setup regular pearlloader positions using the built in zenithproxy module. E.g `pearlLoader add <id> <x> <y> <z>`. Add a player to pearlplus's config using `pearlplus allow <username> <id>`.
+
 #### 2b2t / Anti-spam
 
-On 2b2t or other servers with strict anti-spam plugins you may need to disable strict mode (enabled by default) which then allows you to add a random string after `load` or the `pearlID`.
-```bash
-/w <botName> load <optionalID> <randomString>
-```
+By default you can add a random word after `load` or the `pearlID` to get around anti-spam.
+
+This can be disabled using `pearlplus strict off`.
 
 ### Building The Plugin
 
-Clone the repo or download the zip.  
-Run `./gradlew build`
+Clone the repo or download the zip.
+Run `chmod +x gradlew`
+ then `./gradlew build`
