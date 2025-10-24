@@ -18,7 +18,7 @@ public class PearlPlusConfig {
 
     public static final class AutoDetectConfig {
         public boolean enabled = true;
-        public boolean temporaryMode = true;
+        public boolean temporaryMode = false;
         public Map<String, StoredPearl> storedPearls = new LinkedHashMap<>();
 
         public static final class StoredPearl {
