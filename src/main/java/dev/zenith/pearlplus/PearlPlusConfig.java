@@ -19,7 +19,7 @@ public class PearlPlusConfig {
     public static final class AutoDetectConfig {
         public boolean enabled = true;
         public boolean temporaryMode = false;
-        public boolean twoBtwoTMode = true;
+        public boolean twoBtwoTMode = false;
         public Map<String, StoredPearl> storedPearls = new LinkedHashMap<>();
 
         public static final class StoredPearl {
