@@ -380,6 +380,21 @@ public class AutoDetectModule extends Module {
         return Optional.of(name);
     }
 
+    private Optional<UUID> determineBotUuid() {
+        if (CACHE == null) {
+            return Optional.empty();
+        }
+        var profileCache = CACHE.getProfileCache();
+        if (profileCache == null) {
+            return Optional.empty();
+        }
+        var profile = profileCache.getProfile();
+        if (profile == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(profile.getId());
+    }
+
     private String formatOwner(OwnerInfo owner) {
         return owner != null ? owner.describe() : "unknown";
     }
@@ -631,6 +646,14 @@ public class AutoDetectModule extends Module {
     }
 
     private Optional<OwnerInfo> resolveOwnerInfo(Entity pearl, Map<Integer, Entity> entities) {
+        Optional<OwnerInfo> resolved = resolveOwnerFromProjectileOwner(pearl, entities);
+        if (resolved.isPresent() || !PLUGIN_CONFIG.autoDetect.twoBtwoTMode) {
+            return resolved;
+        }
+        return resolveOwnerFromClosestPlayer(pearl, entities);
+    }
+
+    private Optional<OwnerInfo> resolveOwnerFromProjectileOwner(Entity pearl, Map<Integer, Entity> entities) {
         var data = pearl.getObjectData();
         if (!(data instanceof ProjectileData projectileData)) {
             return Optional.empty();
@@ -643,6 +666,50 @@ public class AutoDetectModule extends Module {
 
         Entity ownerEntity = entities.get(ownerEntityId);
         UUID ownerUuid = ownerEntity != null ? ownerEntity.getUuid() : null;
+        String ownerName = ownerUuid != null ? resolveOwnerName(ownerUuid).orElse(null) : null;
+
+        if (ownerUuid == null && ownerName == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new OwnerInfo(ownerUuid, ownerName));
+    }
+
+    private Optional<OwnerInfo> resolveOwnerFromClosestPlayer(Entity pearl, Map<Integer, Entity> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<UUID> botUuid = determineBotUuid();
+        Entity closest = null;
+        double closestDistanceSq = Double.MAX_VALUE;
+        double pearlX = pearl.getX();
+        double pearlY = pearl.getY();
+        double pearlZ = pearl.getZ();
+
+        for (Entity entity : entities.values()) {
+            if (entity.getEntityType() != EntityType.PLAYER) {
+                continue;
+            }
+            UUID candidateUuid = entity.getUuid();
+            if (botUuid.isPresent() && botUuid.get().equals(candidateUuid)) {
+                continue;
+            }
+
+            double dx = entity.getX() - pearlX;
+            double dy = entity.getY() - pearlY;
+            double dz = entity.getZ() - pearlZ;
+            double distanceSq = dx * dx + dy * dy + dz * dz;
+            if (distanceSq < closestDistanceSq) {
+                closestDistanceSq = distanceSq;
+                closest = entity;
+            }
+        }
+
+        if (closest == null) {
+            return Optional.empty();
+        }
+
+        UUID ownerUuid = closest.getUuid();
         String ownerName = ownerUuid != null ? resolveOwnerName(ownerUuid).orElse(null) : null;
 
         if (ownerUuid == null && ownerName == null) {

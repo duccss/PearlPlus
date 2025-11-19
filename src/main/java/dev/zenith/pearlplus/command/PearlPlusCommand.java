@@ -38,7 +38,8 @@ public class PearlPlusCommand extends Command {
                 "list",
                 "strict <on/off>",
                 "autodetect <on/off>",
-                "autodetect temp <on/off>"
+                "autodetect temp <on/off>",
+                "2b2t <on/off>"
             )
             .aliases("pp")
             .build();
@@ -153,6 +154,15 @@ public class PearlPlusCommand extends Command {
                                     c.getSource().getEmbed()
                                             .title("PearlPlus Autodetect Temp Mode " + toggleStrCaps(enabled));
                                     return 0;
-                                }))));
+                                }))))
+                .then(literal("2b2t")
+                        .then(argument("toggle", toggle()).executes(c -> {
+                            boolean enabled = getToggle(c, "toggle");
+                            PLUGIN_CONFIG.autoDetect.twoBtwoTMode = enabled;
+
+                            c.getSource().getEmbed()
+                                    .title("PearlPlus 2b2t Mode " + toggleStrCaps(enabled));
+                            return 0;
+                        })));
     }
 }

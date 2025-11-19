@@ -43,9 +43,13 @@ Setup regular pearlloader positions using the built in zenithproxy module. E.g `
 
 #### 2b2t / Anti-spam
 
+By default the bot checks the nearest player to a new pearl and assumes that player threw it. This might be buggy but might be necessary as it seems Hause has disabled resolving entity owners. Resolving the name is bulletproof but server owners can 'disable' it.
+
+If you aren't playing 2b2t its highly recommended to resolve names, this can be done with `pearlplus 2b2t off`.
+
 By default you can add a random word after `load` or the `pearlID` to get around anti-spam.
 
-This can be disabled using `pearlplus strict off`.
+This can be disabled using `pearlplus strict on`.
 
 ### Building The Plugin
 
