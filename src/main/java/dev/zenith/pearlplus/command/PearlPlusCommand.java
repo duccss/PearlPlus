@@ -8,15 +8,16 @@ import com.zenith.command.api.CommandUsage;
 import com.zenith.discord.Embed;
 import com.zenith.feature.api.minetools.MinetoolsApi;
 import com.zenith.feature.api.minetools.model.MinetoolsUuidResponse;
-import com.zenith.feature.api.minetools.model.MinetoolsProfileResponse;
+import dev.zenith.pearlplus.PearlPlusConfig;
 import dev.zenith.pearlplus.module.AutoLoadModule;
 import dev.zenith.pearlplus.module.AutoDetectModule;
+import dev.zenith.pearlplus.module.PearlManager;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static com.zenith.Globals.MODULE;
 import static com.zenith.command.brigadier.CustomStringArgumentType.getString;
 import static com.zenith.command.brigadier.CustomStringArgumentType.wordWithChars;
@@ -33,9 +34,11 @@ public class PearlPlusCommand extends Command {
             .description("Allow players to load pearls without whitelist through whispers.")
             .usageLines(
                 "<on/off>",
-                "allow <playerName> <pearlName>",
-                "deny  <playerName> <pearlName>",
-                "list",
+                "default <playerName> <pearlName>",
+                "list [playerName]",
+                "set <playerName> <pearlId> <x> <y> <z>",
+                "rename <playerName> <oldPearlId> <newPearlId>",
+                "idword <word|none>",
                 "strict <on/off>",
                 "autodetect <on/off>",
                 "autodetect temp <on/off>",
@@ -47,122 +50,181 @@ public class PearlPlusCommand extends Command {
 
     @Override
     public LiteralArgumentBuilder<CommandContext> register() {
-        return command("pearlplus")
-            .requires(Command::validateAccountOwner)
+        LiteralArgumentBuilder<CommandContext> builder = command("pearlplus")
+                .requires(Command::validateAccountOwner);
 
-            .then(argument("toggle", toggle()).executes(c -> {
-                boolean enabled = getToggle(c, "toggle");
-                PLUGIN_CONFIG.autoLoad.enabled = enabled;
-                MODULE.get(AutoLoadModule.class).syncEnabledFromConfig();
-                c.getSource().getEmbed()
-                  .title("PearlPlus " + toggleStrCaps(enabled));
-                return 0;
-            }))
+        builder.then(argument("toggle", toggle()).executes(c -> {
+            boolean enabled = getToggle(c, "toggle");
+            PLUGIN_CONFIG.autoLoad.enabled = enabled;
+            MODULE.get(AutoLoadModule.class).syncEnabledFromConfig();
+            c.getSource().getEmbed()
+                    .title("PearlPlus " + toggleStrCaps(enabled));
+            return 0;
+        }));
 
-            .then(literal("allow")
-              .then(argument("playerName", wordWithChars())
-                .then(argument("pearlName", wordWithChars()).executes(c -> {
-                    String name  = getString(c, "playerName");
-                    String pearl = getString(c, "pearlName");
+        builder.then(literal("default")
+                .then(argument("playerName", wordWithChars())
+                        .then(argument("pearlName", wordWithChars()).executes(c -> {
+                            String name = getString(c, "playerName");
+                            String pearl = getString(c, "pearlName");
+                            Optional<MinetoolsUuidResponse> result =
+                                    MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                            if (result.isEmpty()) {
+                                c.getSource().getEmbed().title("Invalid username: " + name);
+                                return 0;
+                            }
+                            UUID uuid = result.get().uuid();
+                            PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
+                            manager.setDefaultPearl(uuid, pearl);
+                            c.getSource().getEmbed().title("Default pearl for " + name + " set to " + pearl);
+                            return 0;
+                        }))));
 
+        builder.then(literal("list")
+                .executes(c -> {
+                    PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
+                    String pearls = manager.pearlsListWithCoordsAllPlayers();
+                    c.getSource().getEmbed().title("All Pearls").description(pearls);
+                    return 0;
+                })
+                .then(argument("playerName", wordWithChars()).executes(c -> {
+                    String name = getString(c, "playerName");
                     Optional<MinetoolsUuidResponse> result =
-                        MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                            MinetoolsApi.INSTANCE.getProfileFromUsername(name);
                     if (result.isEmpty()) {
                         c.getSource().getEmbed().title("Invalid username: " + name);
                         return 0;
                     }
-
                     UUID uuid = result.get().uuid();
-                    List<String> list = PLUGIN_CONFIG.autoLoad.allowed.computeIfAbsent(uuid, k -> new ArrayList<>());
-                    if (!list.contains(pearl)) list.add(pearl);
-
-                    c.getSource().getEmbed()
-                      .title("Allowed " + name + " → pearl " + pearl);
+                    PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
+                    String pearls = manager.pearlsListWithCoords(uuid);
+                    c.getSource().getEmbed().title("Pearls for " + name).description(pearls);
                     return 0;
-              }))))
+                })));
 
-            .then(literal("deny")
-              .then(argument("playerName", wordWithChars())
-                .then(argument("pearlName", wordWithChars()).executes(c -> {
-                    String name  = getString(c, "playerName");
-                    String pearl = getString(c, "pearlName");
+        builder.then(literal("set")
+                .then(argument("playerName", wordWithChars())
+                        .then(argument("pearlId", wordWithChars())
+                                .then(argument("x", integer())
+                                        .then(argument("y", integer())
+                                                .then(argument("z", integer()).executes(c -> {
+                                                    String name = getString(c, "playerName");
+                                                    String pearlId = getString(c, "pearlId");
+                                                    Optional<MinetoolsUuidResponse> result =
+                                                            MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                                                    if (result.isEmpty()) {
+                                                        c.getSource().getEmbed().title("Invalid username: " + name);
+                                                        return 0;
+                                                    }
 
-                    Optional<MinetoolsUuidResponse> result =
-                        MinetoolsApi.INSTANCE.getProfileFromUsername(name);
-                    if (result.isEmpty()) {
-                        c.getSource().getEmbed().title("Invalid username: " + name);
-                        return 0;
+                                                    int x = getInteger(c, "x");
+                                                    int y = getInteger(c, "y");
+                                                    int z = getInteger(c, "z");
+
+                                                    UUID uuid = result.get().uuid();
+                                                    PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
+                                                    manager.recordPearl(uuid, name, pearlId, x, y, z);
+                                                    c.getSource().getEmbed()
+                                                            .title("Pearl stored for " + name)
+                                                            .description(String.format("%s at %d %d %d", pearlId, x, y, z));
+                                                    return 0;
+                                                })))))));
+
+        builder.then(literal("rename")
+                .then(argument("playerName", wordWithChars())
+                        .then(argument("oldPearlId", wordWithChars())
+                                .then(argument("newPearlId", wordWithChars()).executes(c -> {
+                                    String name = getString(c, "playerName");
+                                    String oldPearlId = getString(c, "oldPearlId");
+                                    String newPearlId = getString(c, "newPearlId");
+                                    Optional<MinetoolsUuidResponse> result =
+                                            MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                                    if (result.isEmpty()) {
+                                        c.getSource().getEmbed().title("Invalid username: " + name);
+                                        return 0;
+                                    }
+
+                                    UUID uuid = result.get().uuid();
+                                    PearlPlusConfig.PlayerPearls playerPearls = PLUGIN_CONFIG.players.get(uuid);
+                                    if (playerPearls == null || !playerPearls.pearls.containsKey(oldPearlId)) {
+                                        c.getSource().getEmbed().title("Pearl not found for " + name);
+                                        return 0;
+                                    }
+                                    if (playerPearls.pearls.containsKey(newPearlId)) {
+                                        c.getSource().getEmbed().title("A pearl with that id already exists for " + name);
+                                        return 0;
+                                    }
+
+                                    PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
+                                    boolean renamed = manager.renamePearl(uuid, oldPearlId, newPearlId);
+                                    if (renamed) {
+                                        c.getSource().getEmbed().title("Renamed " + oldPearlId + " to " + newPearlId + " for " + name);
+                                    } else {
+                                        c.getSource().getEmbed().title("Unable to rename pearl for " + name);
+                                    }
+                                    return 0;
+                                })))));
+
+        builder.then(literal("idword")
+                .then(argument("word", wordWithChars()).executes(c -> {
+                    String word = getString(c, "word");
+                    if ("none".equalsIgnoreCase(word)) {
+                        PLUGIN_CONFIG.defaultPearlIdBase = null;
+                        c.getSource().getEmbed().title("Pearl ID word cleared; using player names");
+                    } else {
+                        PLUGIN_CONFIG.defaultPearlIdBase = word;
+                        c.getSource().getEmbed().title("Pearl ID word set to '" + word + "'");
+                    }
+                    return 0;
+                })));
+
+        builder.then(literal("strict")
+                .then(argument("toggle", toggle()).executes(c -> {
+                    boolean strict = getToggle(c, "toggle");
+                    PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl = !strict;
+                    c.getSource().getEmbed()
+                            .title("PearlPlus strict " + toggleStrCaps(strict));
+                    return 0;
+                })));
+
+        builder.then(literal("autodetect")
+                .then(argument("toggle", toggle()).executes(c -> {
+                    boolean enabled = getToggle(c, "toggle");
+                    PLUGIN_CONFIG.autoDetect.enabled = enabled;
+
+                    AutoDetectModule module = MODULE.get(AutoDetectModule.class);
+                    module.syncEnabledFromConfig();
+                    if (enabled) {
+                        module.markExistingPearls();
                     }
 
-                    UUID uuid = result.get().uuid();
-                    List<String> list = PLUGIN_CONFIG.autoLoad.allowed.get(uuid);
-                    if (list != null) {
-                        list.remove(pearl);
-                        if (list.isEmpty()) PLUGIN_CONFIG.autoLoad.allowed.remove(uuid);
-                    }
-
                     c.getSource().getEmbed()
-                      .title("Removed pearl " + pearl + " from " + name);
+                            .title("PearlPlus Autodetect " + toggleStrCaps(enabled));
                     return 0;
-              }))))
-
-            .then(literal("list").executes(c -> {
-                Embed e = c.getSource().getEmbed()
-                  .title("Allowed Entries (" + PLUGIN_CONFIG.autoLoad.allowed.size() + ")");
-                PLUGIN_CONFIG.autoLoad.allowed.forEach((uuid, pearls) -> {
-                    String name = MinetoolsApi.INSTANCE.getProfileFromUUID(uuid)
-                        .map(MinetoolsProfileResponse::name)
-                        .orElse(uuid.toString());
-
-                    e.addField(name, String.join(", ", pearls));
-                });
-                return 0;
-            }))
-            
-            .then(literal("strict")
-                  .then(argument("toggle", toggle()).executes(c -> {
-                      boolean strict = getToggle(c, "toggle");
-                      PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl = !strict;
-                      c.getSource().getEmbed()
-                          .title("PearlPlus strict " + toggleStrCaps(strict));
-                      return 0;
-            })))
-
-            .then(literal("autodetect")
+                }))
+                .then(literal("temp")
                         .then(argument("toggle", toggle()).executes(c -> {
                             boolean enabled = getToggle(c, "toggle");
-                            PLUGIN_CONFIG.autoDetect.enabled = enabled;
+                            PLUGIN_CONFIG.autoDetect.temporaryMode = enabled;
 
                             AutoDetectModule module = MODULE.get(AutoDetectModule.class);
-                            module.syncEnabledFromConfig();
-                            if (enabled) {
-                                module.markExistingPearls();
-                            }
+                            module.onTemporaryModeToggle(enabled);
 
                             c.getSource().getEmbed()
-                                    .title("PearlPlus Autodetect " + toggleStrCaps(enabled));
+                                    .title("PearlPlus Autodetect Temp Mode " + toggleStrCaps(enabled));
                             return 0;
-                        }))
-                        .then(literal("temp")
-                                .then(argument("toggle", toggle()).executes(c -> {
-                                    boolean enabled = getToggle(c, "toggle");
-                                    PLUGIN_CONFIG.autoDetect.temporaryMode = enabled;
+                        }))));
 
-                                    AutoDetectModule module = MODULE.get(AutoDetectModule.class);
-                                    module.onTemporaryModeToggle(enabled);
+        builder.then(literal("2b2t")
+                .then(argument("toggle", toggle()).executes(c -> {
+                    boolean enabled = getToggle(c, "toggle");
+                    PLUGIN_CONFIG.autoDetect.twoBtwoTMode = enabled;
 
-                                    c.getSource().getEmbed()
-                                            .title("PearlPlus Autodetect Temp Mode " + toggleStrCaps(enabled));
-                                    return 0;
-                                }))))
-                .then(literal("2b2t")
-                        .then(argument("toggle", toggle()).executes(c -> {
-                            boolean enabled = getToggle(c, "toggle");
-                            PLUGIN_CONFIG.autoDetect.twoBtwoTMode = enabled;
+                    c.getSource().getEmbed()
+                            .title("PearlPlus 2b2t Mode " + toggleStrCaps(enabled));
+                    return 0;
+                })));
 
-                            c.getSource().getEmbed()
-                                    .title("PearlPlus 2b2t Mode " + toggleStrCaps(enabled));
-                            return 0;
-                        })));
+        return builder;
     }
 }
