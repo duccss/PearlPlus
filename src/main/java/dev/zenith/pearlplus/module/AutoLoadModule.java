@@ -32,6 +32,8 @@ public class AutoLoadModule extends Module {
 
         String rawMessage = event.message().trim();
         String msg = rawMessage.toLowerCase();
+        String[] lowerParts = msg.split("\\s+");
+        String[] parts = rawMessage.trim().split("\\s+");
         var sender = event.sender();
         String name = sender.getName();
         UUID uuid = sender.getProfileId();
@@ -45,6 +47,57 @@ public class AutoLoadModule extends Module {
             return;
         }
 
+        if (lowerParts.length > 0 && "default".equals(lowerParts[0])) {
+            var playerEntry = PLUGIN_CONFIG.players.get(uuid);
+            if (playerEntry == null || playerEntry.pearls.isEmpty()) {
+                info("Default request from player without pearls: " + name);
+                return;
+            }
+            if (parts.length < 2) {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Specify a pearl ID to set as default."));
+                return;
+            }
+            String resolved = pearlManager.resolvePearlId(uuid, parts[1]);
+            if (resolved == null) {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Pearl not found."));
+                return;
+            }
+            pearlManager.setDefaultPearl(uuid, resolved);
+            sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Default pearl set to " + resolved + "."));
+            return;
+        }
+
+        if (lowerParts.length > 0 && "rename".equals(lowerParts[0])) {
+            var playerEntry = PLUGIN_CONFIG.players.get(uuid);
+            if (playerEntry == null || playerEntry.pearls.isEmpty()) {
+                info("Rename request from player without pearls: " + name);
+                return;
+            }
+            if (parts.length < 3) {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Usage: rename <oldId> <newId>"));
+                return;
+            }
+            String oldPearlId = pearlManager.resolvePearlId(uuid, parts[1]);
+            if (oldPearlId == null) {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Pearl not found."));
+                return;
+            }
+            String newPearlId = parts[2];
+            boolean exists = playerEntry.pearls.keySet().stream()
+                    .anyMatch(id -> id.equalsIgnoreCase(newPearlId));
+            if (exists) {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "A pearl with that id already exists."));
+                return;
+            }
+            boolean renamed = pearlManager.renamePearl(uuid, oldPearlId, newPearlId);
+            if (renamed) {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Renamed " + oldPearlId + " to " + newPearlId + "."));
+            } else {
+                sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Unable to rename pearl."));
+            }
+            return;
+        }
+
         if (!msg.startsWith("load")) return;
 
         var playerEntry = PLUGIN_CONFIG.players.get(uuid);
@@ -53,20 +106,19 @@ public class AutoLoadModule extends Module {
             return;
         }
 
-        String[] parts = msg.split("\\s+");
         String requestedPearl;
 
         if (!PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl) {
-            if (parts.length > 2) {
+            if (lowerParts.length > 2) {
                 info("Extra arguments not allowed for " + name);
                 return;
             }
-        } else if (parts.length > 3) {
+        } else if (lowerParts.length > 3) {
             info("Too many arguments from " + name);
             return;
         }
 
-        if (parts.length == 1) {
+        if (lowerParts.length == 1) {
             requestedPearl = pearlManager.defaultPearlId(uuid);
         } else {
             String candidate = parts[1];
@@ -91,10 +143,10 @@ public class AutoLoadModule extends Module {
         discordAndIngameNotification(com.zenith.discord.Embed.builder()
                 .title("Recieved Whisper")
                 .addField("Sender", name)
-                .addField("PearlID", requestedPearl)
+                .addField("Pearl", requestedPearl)
         );
 
-        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl: " + requestedPearl + "..."));
+        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl " + requestedPearl + "..."));
 
         if (!pearlManager.isPearlPresent(pearl)) {
             sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "No pearl detected. Attempting to load anyways."));

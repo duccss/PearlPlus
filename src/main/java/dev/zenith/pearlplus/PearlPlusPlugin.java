@@ -10,8 +10,8 @@ import dev.zenith.pearlplus.module.*;
 @Plugin(
     id = "pearlplus",
     version = BuildConstants.VERSION,
-    description = "Fully auto stasis pearl detection. Load pearls through whispers without whitelist.",
-    url = "https://github.com/duccss/",
+    description = "Slightly better pearl loading module.",
+    url = "https://github.com/duccss/pearlplus/",
     authors = {"duccss"},
     mcVersions = {"1.21.0", "1.21.4", "1.21.5", "1.21.7", "1.21.8", "1.21.10"}
 )

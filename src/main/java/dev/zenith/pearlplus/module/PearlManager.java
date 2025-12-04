@@ -16,9 +16,6 @@ import static com.zenith.Globals.*;
 import static dev.zenith.pearlplus.PearlPlusPlugin.LOG;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
 
-/**
- * Manages storing and loading stasis pearls using the PearlPlus config.
- */
 public class PearlManager {
     private final Module notifier;
 
@@ -99,9 +96,25 @@ public class PearlManager {
     public String defaultPearlId(UUID ownerUuid) {
         PearlPlusConfig.PlayerPearls entry = PLUGIN_CONFIG.players.get(ownerUuid);
         if (entry == null) return null;
-        if (entry.defaultPearlId != null && entry.pearls.containsKey(entry.defaultPearlId)) {
-            return entry.defaultPearlId;
+        String configuredDefault = entry.defaultPearlId;
+        if (configuredDefault != null && entry.pearls.containsKey(configuredDefault)) {
+            if (!PLUGIN_CONFIG.autoLoad.autoDefaultToPresent || isPearlPresent(entry.pearls.get(configuredDefault))) {
+                return configuredDefault;
+            }
         }
+
+        if (PLUGIN_CONFIG.autoLoad.autoDefaultToPresent) {
+            for (Map.Entry<String, PearlPlusConfig.StoredPearl> pearlEntry : entry.pearls.entrySet()) {
+                if (isPearlPresent(pearlEntry.getValue())) {
+                    return pearlEntry.getKey();
+                }
+            }
+        }
+
+        if (configuredDefault != null && entry.pearls.containsKey(configuredDefault)) {
+            return configuredDefault;
+        }
+
         return entry.pearls.keySet().stream().findFirst().orElse(null);
     }
 
@@ -126,10 +139,26 @@ public class PearlManager {
         if (pearl == null || CACHE == null || CACHE.getEntityCache() == null) {
             return false;
         }
+        if (!isWithinPresenceRange(pearl)) {
+            return false;
+        }
         return CACHE.getEntityCache().getEntities().values().stream()
                 .anyMatch(entity -> entity.getEntityType() == org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType.ENDER_PEARL
                         && Math.floor(entity.getX()) == pearl.x
                         && Math.floor(entity.getZ()) == pearl.z);
+    }
+
+    private boolean isWithinPresenceRange(PearlPlusConfig.StoredPearl pearl) {
+        if (CACHE == null || CACHE.getPlayerCache() == null || CACHE.getPlayerCache().getThePlayer() == null) {
+            return false;
+        }
+
+        var player = CACHE.getPlayerCache().getThePlayer();
+        double dx = player.getX() - pearl.x;
+        double dy = player.getY() - pearl.y;
+        double dz = player.getZ() - pearl.z;
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return distance <= PLUGIN_CONFIG.autoDetect.temporaryRemovalRange;
     }
 
     public void loadPearl(PearlPlusConfig.StoredPearl pearl, String requesterName) {
@@ -171,17 +200,21 @@ public class PearlManager {
     public String pearlsList(UUID ownerUuid) {
         PearlPlusConfig.PlayerPearls entry = PLUGIN_CONFIG.players.get(ownerUuid);
         if (entry == null || entry.pearls.isEmpty()) return "None";
-        StringBuilder sb = new StringBuilder();
+
+        StringBuilder sb = new StringBuilder("PearlIDs: ");
+        boolean first = true;
         for (Map.Entry<String, PearlPlusConfig.StoredPearl> e : entry.pearls.entrySet()) {
             PearlPlusConfig.StoredPearl pearl = e.getValue();
-            sb.append("**").append(pearl.pearlId).append("**");
-            if (pearl.pearlId != null && pearl.pearlId.equals(entry.defaultPearlId)) {
-                sb.append(" (default)");
+            if (!first) {
+                sb.append(", ");
             }
-            sb.append("\n");
+            sb.append(pearl.pearlId);
+            if (!isPearlPresent(pearl)) {
+                sb.append("*");
+            }
+            first = false;
         }
-        String result = sb.toString();
-        return result.isBlank() ? "None" : result.substring(0, result.length() - 1);
+        return sb.toString();
     }
 
     public String pearlsListWithCoords(UUID ownerUuid) {
@@ -191,9 +224,6 @@ public class PearlManager {
         for (Map.Entry<String, PearlPlusConfig.StoredPearl> e : entry.pearls.entrySet()) {
             PearlPlusConfig.StoredPearl pearl = e.getValue();
             sb.append("**").append(pearl.pearlId).append("**");
-            if (pearl.pearlId != null && pearl.pearlId.equals(entry.defaultPearlId)) {
-                sb.append(" (default)");
-            }
             sb.append(": ");
             if (CONFIG.discord.reportCoords) {
                 sb.append("||[").append(pearl.x).append(", ").append(pearl.y).append(", ").append(pearl.z).append("]||");
@@ -218,9 +248,6 @@ public class PearlManager {
             sb.append("**").append(playerName).append("**").append("\n");
             for (PearlPlusConfig.StoredPearl pearl : playerPearls.pearls.values()) {
                 sb.append("- ").append(pearl.pearlId);
-                if (pearl.pearlId != null && pearl.pearlId.equals(playerPearls.defaultPearlId)) {
-                    sb.append(" (default)");
-                }
                 sb.append(": ");
                 if (CONFIG.discord.reportCoords) {
                     sb.append("||[").append(pearl.x).append(", ").append(pearl.y).append(", ").append(pearl.z).append("]||");
@@ -237,7 +264,7 @@ public class PearlManager {
 
     public String nextAvailablePearlId(UUID ownerUuid, String ownerName) {
         PearlPlusConfig.PlayerPearls entry = PLUGIN_CONFIG.players.get(ownerUuid);
-        String configuredBase = PLUGIN_CONFIG.defaultPearlIdBase;
+        String configuredBase = PLUGIN_CONFIG.defaultPearlId;
         String base;
         if (configuredBase != null && !configuredBase.isBlank()) {
             base = configuredBase;

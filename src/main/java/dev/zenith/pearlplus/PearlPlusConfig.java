@@ -8,7 +8,7 @@ public class PearlPlusConfig {
     public final AutoLoadConfig autoLoad = new AutoLoadConfig();
     public final AutoDetectConfig autoDetect = new AutoDetectConfig();
 
-    public String defaultPearlIdBase = "pearl";
+    public String defaultPearlId = "Base";
 
     public final Map<UUID, PlayerPearls> players = new LinkedHashMap<>();
 
@@ -16,13 +16,14 @@ public class PearlPlusConfig {
         public boolean enabled = true;
         public boolean allowNoiseAfterPearl = true;
         public boolean returnToStartPos = true;
+        public boolean autoDefaultToPresent = true;
     }
 
     public static final class AutoDetectConfig {
         public boolean enabled = true;
         public boolean temporaryMode = false;
-        public boolean twoBtwoTMode = false;
-        public int temporaryRemovalRange = 32;
+        public boolean distanceCheck = false;
+        public int temporaryRemovalRange = 32; //blocks
     }
 
     public static final class PlayerPearls {

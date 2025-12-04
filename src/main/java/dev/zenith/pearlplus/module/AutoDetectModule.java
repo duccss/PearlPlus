@@ -25,6 +25,7 @@ public class AutoDetectModule extends Module {
 
     private final Map<Integer, TrackedPearl> trackedPearls = new HashMap<>();
     private final PearlManager pearlManager = new PearlManager(this);
+    private final Set<Column> acknowledgedColumns = new HashSet<>();
     private boolean pendingReconnectGrace = false;
     private long suppressStoredPearlRemovalUntil = 0L;
 
@@ -92,7 +93,9 @@ public class AutoDetectModule extends Module {
 
             TrackedPearl tracked = new TrackedPearl(position, owner, now);
             tracked.setPearlId(storedEntry != null ? storedEntry.pearl().pearlId : null);
-            tracked.markRegistered();
+            if (storedEntry != null) {
+                acknowledgedColumns.add(columnOf(position));
+            }
             trackedPearls.put(entity.getEntityId(), tracked);
         }
     }
@@ -172,6 +175,7 @@ public class AutoDetectModule extends Module {
                 trackedPearl.blockZ(),
                 trackedPearl.ownerSummary()
         ));
+        acknowledgedColumns.remove(columnOf(trackedPearl.registrationPosition()));
         handleTemporaryRemoval(trackedPearl);
     }
 
@@ -183,7 +187,13 @@ public class AutoDetectModule extends Module {
         if (proxy == null || !proxy.isConnected() || proxy.isInQueue()) {
             return;
         }
-        if (!trackedPearl.isRegistered() || trackedPearl.pearlId() == null || trackedPearl.owner() == null || trackedPearl.owner().uuid() == null) {
+        Optional<StoredPearlEntry> storedEntry = findStoredPearlByColumn(trackedPearl.blockX(), trackedPearl.blockZ());
+        if (storedEntry.isEmpty()) {
+            return;
+        }
+        trackedPearl.setOwner(selectOwner(trackedPearl.owner(), storedEntry.get().ownerInfo(), trackedPearl.owner()));
+        trackedPearl.setPearlId(storedEntry.get().pearl().pearlId);
+        if (trackedPearl.pearlId() == null || trackedPearl.owner() == null || trackedPearl.owner().uuid() == null) {
             return;
         }
 
@@ -193,15 +203,11 @@ public class AutoDetectModule extends Module {
 
         sendRemovalWarning(trackedPearl);
         sendUnregisterWhisper(trackedPearl.owner(), trackedPearl.pearlId());
-        pearlManager.removePearl(trackedPearl.owner().uuid(), trackedPearl.pearlId());
+        pearlManager.removePearl(storedEntry.get().ownerUuid(), trackedPearl.pearlId());
     }
 
     private void attemptAutoRegistration(long now) {
         for (TrackedPearl tracked : trackedPearls.values()) {
-            if (tracked.isRegistered()) {
-                continue;
-            }
-
             if (!tracked.ownerHasName() || tracked.owner().uuid() == null) {
                 if (!tracked.waitingForNameLogged()) {
                     info("Waiting for thrower's name/uuid before auto-registering loader");
@@ -216,6 +222,38 @@ public class AutoDetectModule extends Module {
                 continue;
             }
 
+            BlockPosition target = tracked.registrationPosition();
+            Optional<StoredPearlEntry> existingStored = findStoredPearlByColumn(target.x(), target.z());
+            if (existingStored.isPresent()) {
+                StoredPearlEntry storedPearl = existingStored.get();
+                if (isDifferentOwner(tracked.owner(), storedPearl.ownerInfo()) && tracked.ownerHasName() && !tracked.conflictNotified()) {
+                    sendForeignOwnershipWhisper(tracked.owner().name(), storedPearl.ownerInfo());
+                    tracked.markConflictNotified();
+                }
+
+                tracked.setPearlId(storedPearl.pearl().pearlId);
+                tracked.setOwner(selectOwner(tracked.owner(), storedPearl.ownerInfo(), tracked.owner()));
+
+                Column column = columnOf(target);
+
+                if (!isDifferentOwner(tracked.owner(), storedPearl.ownerInfo())
+                        && storedPearl.pearl().pearlId != null
+                        && tracked.owner() != null
+                        && tracked.owner().uuid() != null) {
+                    pearlManager.recordPearl(
+                            tracked.owner().uuid(),
+                            tracked.owner().name(),
+                            storedPearl.pearl().pearlId,
+                            target.x(),
+                            target.y(),
+                            target.z());
+
+                    acknowledgedColumns.add(column);
+                }
+
+                continue;
+            }
+
             String pearlId = tracked.pearlId();
             if (pearlId == null || pearlId.isBlank()) {
                 pearlId = pearlManager.nextAvailablePearlId(tracked.owner().uuid(), tracked.owner().name());
@@ -225,7 +263,6 @@ public class AutoDetectModule extends Module {
                 tracked.setPearlId(pearlId);
             }
 
-            BlockPosition target = tracked.registrationPosition();
             info(String.format(
                     "Registering pearl %s at %d %d %d for %s",
                     pearlId,
@@ -238,37 +275,29 @@ public class AutoDetectModule extends Module {
             pearlManager.recordPearl(tracked.owner().uuid(), tracked.owner().name(), pearlId, target.x(), target.y(), target.z());
 
             String ownerName = tracked.owner() != null ? tracked.owner().name() : null;
-            if (ownerName != null && !ownerName.isBlank()) {
-                sendRegistrationWhisper(ownerName, pearlId);
+            if (ownerName != null && !ownerName.isBlank() && sendRegistrationWhisper(ownerName, pearlId)) {
+                tracked.markRegistrationNotified();
             }
+            acknowledgedColumns.add(columnOf(target));
             sendRegistrationNotification(pearlId, target, tracked);
-
-            tracked.markRegistered();
         }
     }
 
-    private void sendRegistrationWhisper(String ownerName, String pearlId) {
-        Optional<String> botName = determineBotName();
-        if (botName.isEmpty()) {
-            info(String.format(
-                    "Unable to determine bot name to whisper %s about loader %s",
-                    ownerName,
-                    pearlId
-            ));
-            return;
+    private boolean sendRegistrationWhisper(String ownerName, String pearlId) {
+        if (ownerName == null || ownerName.isBlank() || pearlId == null || pearlId.isBlank()) {
+            return false;
         }
 
-        String message = String.format(
-                "Pearl Registered. Load me with /w %s load %s",
-                botName.get(),
-                pearlId
-        );
+        String message = determineBotName()
+                .map(botName -> String.format("Pearl Registered. Load me with /w %s load %s", botName, pearlId))
+                .orElse(String.format("Pearl Registered as %s.", pearlId));
         sendClientPacketAsync(ChatUtil.getWhisperChatPacket(ownerName, message));
         info(String.format(
                 "Whispered registration instructions to %s for loader %s",
                 ownerName,
                 pearlId
         ));
+        return true;
     }
 
     private void sendRegistrationNotification(String pearlId, BlockPosition position, TrackedPearl trackedPearl) {
@@ -284,6 +313,16 @@ public class AutoDetectModule extends Module {
                 .addField("Owner", ownerSummary)
                 .addField("Position", String.format("%d %d %d", position.x(), position.y(), position.z()))
         );
+    }
+
+    private void sendForeignOwnershipWhisper(String throwerName, OwnerInfo storedOwner) {
+        if (throwerName == null || throwerName.isBlank() || storedOwner == null || !storedOwner.hasName()) {
+            return;
+        }
+
+        String message = String.format("Pearl spot already belongs to %s.", storedOwner.name());
+        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(throwerName, message));
+        info(String.format("Notified %s that loader column is owned by %s", throwerName, storedOwner.describe()));
     }
 
     private Optional<String> determineBotName() {
@@ -340,9 +379,22 @@ public class AutoDetectModule extends Module {
         return new OwnerInfo(uuid, name);
     }
 
+    private boolean isDifferentOwner(OwnerInfo thrower, OwnerInfo storedOwner) {
+        if (thrower == null || storedOwner == null) {
+            return false;
+        }
+        if (thrower.uuid() != null && storedOwner.uuid() != null) {
+            return !thrower.uuid().equals(storedOwner.uuid());
+        }
+        if (thrower.hasName() && storedOwner.hasName()) {
+            return !thrower.name().equalsIgnoreCase(storedOwner.name());
+        }
+        return false;
+    }
+
     private Optional<OwnerInfo> resolveOwnerInfo(Entity pearl, Map<Integer, Entity> entities) {
         Optional<OwnerInfo> resolved = resolveOwnerFromProjectileOwner(pearl, entities);
-        if (resolved.isPresent() || !PLUGIN_CONFIG.autoDetect.twoBtwoTMode) {
+        if (resolved.isPresent() || !PLUGIN_CONFIG.autoDetect.distanceCheck) {
             return resolved;
         }
         return resolveOwnerFromClosestPlayer(pearl, entities);
@@ -518,6 +570,13 @@ public class AutoDetectModule extends Module {
                 .max(Comparator.comparingInt(pearl -> pearl.pearl().y));
     }
 
+    private Column columnOf(BlockPosition position) {
+        if (position == null) {
+            return null;
+        }
+        return new Column(position.x(), position.z());
+    }
+
     private void sendRemovalWarning(TrackedPearl trackedPearl) {
         var builder = Embed.builder()
                 .title("Pearl Removal Warning")
@@ -550,6 +609,8 @@ public class AutoDetectModule extends Module {
         }
     }
 
+    private record Column(int x, int z) { }
+
     private record OwnerInfo(UUID uuid, String name) {
         boolean hasName() {
             return name != null && !name.isBlank();
@@ -574,9 +635,11 @@ public class AutoDetectModule extends Module {
         private final Deque<BlockPosition> history = new ArrayDeque<>();
         private OwnerInfo owner;
         private String pearlId;
-        private boolean registered;
         private boolean waitingForNameLogged;
         private long lastMovedAt;
+        private boolean conflictNotified;
+        private boolean registrationNotified;
+        private boolean moved;
 
         TrackedPearl(BlockPosition position, OwnerInfo owner, long timestamp) {
             this(position, owner, timestamp, null);
@@ -594,6 +657,7 @@ public class AutoDetectModule extends Module {
             if (!newPosition.equals(this.position)) {
                 this.position = newPosition;
                 this.lastMovedAt = timestamp;
+                this.moved = true;
                 history.addLast(newPosition);
                 while (history.size() > POSITION_HISTORY_LIMIT) {
                     history.removeFirst();
@@ -629,6 +693,26 @@ public class AutoDetectModule extends Module {
             this.waitingForNameLogged = false;
         }
 
+        boolean conflictNotified() {
+            return conflictNotified;
+        }
+
+        void markConflictNotified() {
+            this.conflictNotified = true;
+        }
+
+        boolean registrationNotified() {
+            return registrationNotified;
+        }
+
+        void markRegistrationNotified() {
+            this.registrationNotified = true;
+        }
+
+        boolean hasMoved() {
+            return moved;
+        }
+
         void setPearlId(String pearlId) {
             this.pearlId = pearlId;
         }
@@ -639,14 +723,6 @@ public class AutoDetectModule extends Module {
 
         boolean hasPearlId() {
             return pearlId != null && !pearlId.isBlank();
-        }
-
-        void markRegistered() {
-            this.registered = true;
-        }
-
-        boolean isRegistered() {
-            return registered;
         }
 
         boolean isStable(long now) {
