@@ -25,19 +25,19 @@ pearlplus del <playerName> <pearlId>
 pearlplus list
 ```
 ```bash
-pearlplus defaultpearlid <word|none>
+pearlplus defaultpearlid <word/none>
 ```
 ```bash
 pearlplus autodefault <on/off>
 ```
 ```bash
-pearlplus strict on/off
+pearlplus strict <on/off>
 ```
 ```bash
-pearlplus autodetect on/off
+pearlplus autodetect <on/off>
 ```
 ```bash
-pearlplus autodetect temp on/off
+pearlplus autodetect temp <on/off>
 ```
 ```bash
 pearlplus returnpos <on/off>
@@ -54,7 +54,7 @@ There are a few ingame commands players can whisper to the bot to manage their p
 
 `rename oldPearlID newPearlID` changes the pearlID.
 
-`default PearlID` sets that pearl as default when whispering load with `autodefault` disabled.
+`default PearlID` sets that pearl as default if `autodefault` disabled.
 
 ### Usage
 
@@ -64,18 +64,18 @@ Simply throw a new ender pearl and once it becomes stable the bot will register 
 ```
 By default, when a player doesnt specify which pearl they want loaded the bot will load whatever one where a pearl is detected. Can be disabled with `pp autodefault off`
 
-Temp mode automatically removes pearl positions where a pearl isnt detected. May be buggy.
+Temp mode automatically removes pearl positions where a pearl isnt detected. May be buggy. Not recommended. Do **NOT** use `pp distancecheck` with temp mode.
 
-Can be enabled with `pearlplus autodetect temp on` 
+Can be enabled with `pp autodetect temp on` 
 
 #### Manual setup
 Use the `pp add/del` commands to setup manually.
 
 #### 2b2t / Anti-spam
 
-By default the bot resolves the username of pearl throwers with entity ID's. Some servers might not allow this so if the bot is unable to register pearls automatically use `pp distancecheck on`. This will get the throwers name from the closest player to it.
+By default the bot resolves the username of pearl throwers with entity ID's. Some servers might not allow this so if the bot is unable to register pearls automatically use `pp distancecheck on`. This will get the throwers name from the closest player to the pearl. 2b2t players have reported autodetect ceasing to work occasionally. Always test before enabling this feature.
 
-By default you can add a random word after `load` or the `pearlID` to get around anti-spam. This can be disabled using `pearlplus strict on`.
+By default you can add a random word after `load` or the `pearlID` to get around anti-spam. This can be disabled using `pp strict on`.
 
 ### Building The Plugin
 
