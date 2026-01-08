@@ -428,7 +428,7 @@ public class AutoDetectModule extends Module {
 
         Optional<UUID> botUuid = determineBotUuid();
         Entity closest = null;
-        double closestDistanceSq = Double.MAX_VALUE;
+        double closestDistanceSq = 2.0;
         double pearlX = pearl.getX();
         double pearlY = pearl.getY();
         double pearlZ = pearl.getZ();
