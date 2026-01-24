@@ -226,11 +226,11 @@ public class PearlPlusCommand extends Command {
                                 return 0;
                             }
                             UUID uuid = result.get().uuid();
-                            if (PLUGIN_CONFIG.whitelist.contains(uuid)) {
+                            if (PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
                                 c.getSource().getEmbed().title(playerName + " is already whitelisted");
                                 return 0;
                             }
-                            PLUGIN_CONFIG.whitelist.add(uuid);
+                            PLUGIN_CONFIG.whitelist.put(uuid, new dev.zenith.pearlplus.PearlPlusConfig.WhitelistedPlayer(playerName, uuid));
                             c.getSource().getEmbed().title("Added " + playerName + " to whitelist");
                             LOG.info("Added " + playerName + " (" + uuid + ") to whitelist");
                             return 0;
@@ -244,7 +244,7 @@ public class PearlPlusCommand extends Command {
                                 return 0;
                             }
                             UUID uuid = result.get().uuid();
-                            if (!PLUGIN_CONFIG.whitelist.contains(uuid)) {
+                            if (!PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
                                 c.getSource().getEmbed().title(playerName + " is not in the whitelist");
                                 return 0;
                             }
@@ -259,8 +259,8 @@ public class PearlPlusCommand extends Command {
                         return 0;
                     }
                     StringBuilder sb = new StringBuilder();
-                    for (UUID uuid : PLUGIN_CONFIG.whitelist) {
-                        sb.append("- ").append(uuid.toString()).append("\n");
+                    for (dev.zenith.pearlplus.PearlPlusConfig.WhitelistedPlayer player : PLUGIN_CONFIG.whitelist.values()) {
+                        sb.append("- ").append(player.username).append(" (").append(player.uuid).append(")\n");
                     }
                     c.getSource().getEmbed()
                             .title("Whitelist (" + PLUGIN_CONFIG.whitelist.size() + " players)")
@@ -274,7 +274,6 @@ public class PearlPlusCommand extends Command {
                     LOG.info("Cleared whitelist (" + count + " players removed)");
                     return 0;
                 }))
-                
                 .then(literal("enable")
                         .then(argument("toggle", toggle()).executes(c -> {
                             boolean enabled = getToggle(c, "toggle");
