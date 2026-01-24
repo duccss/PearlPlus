@@ -154,10 +154,20 @@ public class AutoLoadModule extends Module {
                 .addField("Pearl", requestedPearl)
         );
 
-        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl " + requestedPearl + "..."));
+        // Check the amount of pearls left for the user.
+        int PearlsLeft = pearlManager.countPresentPearls(uuid);
+
+        // Set the default sentence to send.
+        String pearlFeedback = "You have " + PearlsLeft + " pearls left.";
+
+        if(PearlsLeft == 1){
+            pearlFeedback = "Don't forget to drop down a new pearl, this is your last one!";
+        }
 
         if (!pearlManager.isPearlPresent(pearl)) {
             sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "No pearl detected. Attempting to load anyways."));
+        }else{
+            sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl " + requestedPearl + "... "+pearlFeedback));
         }
 
         pearlManager.loadPearl(pearl, name);
