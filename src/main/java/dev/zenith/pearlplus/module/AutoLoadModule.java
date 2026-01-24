@@ -38,6 +38,14 @@ public class AutoLoadModule extends Module {
         String name = sender.getName();
         UUID uuid = sender.getProfileId();
 
+        // Check whitelist for load commands
+        if (msg.startsWith("load")) {
+            if (!PLUGIN_CONFIG.whitelist.isEmpty() && !PLUGIN_CONFIG.whitelist.contains(uuid)) {
+                // Non-whitelisted player trying to load - ignore silently
+                return;
+            }
+        }
+
         if (msg.equals("pearls")) {
             var playerEntry = PLUGIN_CONFIG.players.get(uuid);
             if (playerEntry != null && !playerEntry.pearls.isEmpty()) {
