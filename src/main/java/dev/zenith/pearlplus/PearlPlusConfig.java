@@ -21,6 +21,7 @@ public class PearlPlusConfig {
         public boolean returnToStartPos = true;
         public boolean autoDefaultToPresent = true;
         public boolean whitelistEnabled = false;
+        public boolean dropPearlAfterLoad = true;
     }
 
     public static final class AutoDetectConfig {

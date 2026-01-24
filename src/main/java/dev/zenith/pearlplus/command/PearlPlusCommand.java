@@ -43,7 +43,9 @@ public class PearlPlusCommand extends Command {
                 "autodetect <on/off>",
                 "autodetect temp <on/off>",
                 "distancecheck <on/off>",
-                "autodefault <on/off>"
+                "autodefault <on/off>",
+                "whitelist <enable / add / clear / list / remove>",
+                "droppearlafterload <on/off>"
             )
             .aliases("pp")
             .build();
@@ -282,6 +284,15 @@ public class PearlPlusCommand extends Command {
                                     .title("Whitelist " + toggleStrCaps(enabled));
                             return 0;
                         }))));
+                
+                builder.then(literal("droppearlafterload")
+                .then(argument("toggle", toggle()).executes(c -> {
+                    boolean dropPearlAfterLoad = getToggle(c, "toggle");
+                    PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad = dropPearlAfterLoad;
+                    c.getSource().getEmbed()
+                            .title("Drop pearl after load " + toggleStrCaps(dropPearlAfterLoad));
+                    return 0;
+                })));
 
         return builder;
     }
