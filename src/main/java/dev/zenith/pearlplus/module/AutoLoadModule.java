@@ -154,8 +154,8 @@ public class AutoLoadModule extends Module {
                 .addField("Pearl", requestedPearl)
         );
 
-        // Check the amount of pearls left for the user.
-        int PearlsLeft = pearlManager.countPresentPearls(uuid);
+        // Check the amount of pearls left for the user. Subtract one since the pearl will be pulled after.
+        int PearlsLeft = pearlManager.countPresentPearls(uuid)-1;
 
         // Set the default sentence to send.
         String pearlFeedback = "You have " + PearlsLeft + " pearls left.";
