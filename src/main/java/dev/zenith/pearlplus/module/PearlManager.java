@@ -380,7 +380,12 @@ public class PearlManager {
         info("Sent out-of-pearls message to " + playerName);
     }
 
-    // Main method to handle pearl dropping after load
+    /**
+     * Drops a new pearl to the player that just got teleported.
+     * Will beg them for a restock if the bot ran out of pearls.
+     * 
+     * @param playerName    
+     */
     public void handlePearlDropAfterLoad(String playerName) {
         if (!PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad) {
             return;
@@ -397,11 +402,10 @@ public class PearlManager {
             info("Successfully dropped pearl for " + playerName);
         } else {
             sendOutOfPearlsMessage(playerName);
-            info("No pearls available for " + playerName + ". Begged them for drop me some.");
+            info("No pearls available to drop for " + playerName + ". Begged them to drop me some.");
         }
     }
 
-    // Helper method to check if an item is an ender pearl
     private boolean isEnderPearl(Object itemStack) {
         if (itemStack == null) {
             return false;
@@ -463,5 +467,45 @@ public class PearlManager {
         }
         
         return -1;
+    }
+
+    /**
+     * Returns the amount of pearls a player has left in the stasis. 
+     * 
+     * @param ownerUuid UUID of the player we want to check the pearlcount for. 
+     * @return  Pearlcount
+     */
+    public int countPresentPearls(UUID ownerUuid) {
+        if (ownerUuid == null) return 0;
+        PearlPlusConfig.PlayerPearls entry = PLUGIN_CONFIG.players.get(ownerUuid);
+        if (entry == null || entry.pearls == null) return 0;
+        
+        int presentCount = 0;
+        for (PearlPlusConfig.StoredPearl pearl : entry.pearls.values()) {
+            if (isPearlPresent(pearl)) {
+                presentCount++;
+            }
+        }
+        
+        return presentCount;
+    }
+
+    /**
+     * Looks up the uuid from a playername. 
+     * 
+     * @param username
+     * @return
+     */
+    public UUID getUuidFromUsername(String username) {
+        if (username == null || username.isBlank()) return null;
+        
+        for (var entry : PLUGIN_CONFIG.players.entrySet()) {
+            UUID uuid = entry.getKey();
+            PearlPlusConfig.PlayerPearls playerPearls = entry.getValue();
+            if (playerPearls != null && username.equals(playerPearls.playerName)) {
+                return uuid;
+            }
+        }
+        return null;
     }
 }
