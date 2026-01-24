@@ -46,6 +46,18 @@ pearlplus returnpos <on/off>
 pearlplus distancecheck <on/off>
 ```
 
+```bash
+pearlplus whitelist <on/off>
+pearlplus whitelist add <playername>
+pearlplus whitelist del <playername>
+pearlplus whitelist list
+pearlplus whitelist clear
+```
+
+```bash
+pearlplus droppearlafterload <on/off>
+```
+
 ### Ingame Whisper Commands
 
 There are a few ingame commands players can whisper to the bot to manage their pearls.
