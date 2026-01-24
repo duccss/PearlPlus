@@ -40,7 +40,7 @@ public class AutoLoadModule extends Module {
 
         // Check whitelist for load commands
         if (msg.startsWith("load")) {
-            if (!PLUGIN_CONFIG.whitelist.isEmpty() && !PLUGIN_CONFIG.whitelist.contains(uuid)) {
+            if (PLUGIN_CONFIG.autoLoad.whitelistEnabled && !PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
                 // Non-whitelisted player trying to load - ignore silently
                 return;
             }
