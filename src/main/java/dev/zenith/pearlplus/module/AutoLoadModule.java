@@ -161,5 +161,6 @@ public class AutoLoadModule extends Module {
         }
 
         pearlManager.loadPearl(pearl, name);
+        
     }
 }
