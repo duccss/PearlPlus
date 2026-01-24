@@ -20,6 +20,7 @@ public class PearlPlusConfig {
         public boolean allowNoiseAfterPearl = true;
         public boolean returnToStartPos = true;
         public boolean autoDefaultToPresent = true;
+        public boolean whitelistEnabled = false;
     }
 
     public static final class AutoDetectConfig {

@@ -273,7 +273,16 @@ public class PearlPlusCommand extends Command {
                     c.getSource().getEmbed().title("Cleared whitelist (" + count + " players removed)");
                     LOG.info("Cleared whitelist (" + count + " players removed)");
                     return 0;
-                })));
+                }))
+                
+                .then(literal("enable")
+                        .then(argument("toggle", toggle()).executes(c -> {
+                            boolean enabled = getToggle(c, "toggle");
+                            PLUGIN_CONFIG.autoLoad.whitelistEnabled = enabled;
+                            c.getSource().getEmbed()
+                                    .title("Whitelist " + toggleStrCaps(enabled));
+                            return 0;
+                        }))));
 
         return builder;
     }
