@@ -3,6 +3,14 @@ package dev.zenith.pearlplus.module;
 import com.zenith.Proxy;
 import com.zenith.discord.Embed;
 import com.zenith.mc.block.BlockPos;
+import com.zenith.mc.item.ItemRegistry;
+import com.zenith.mc.item.ItemData;
+import com.zenith.feature.inventory.actions.DropItem;
+import com.zenith.feature.inventory.actions.MoveToHotbarSlot;
+import com.zenith.feature.inventory.InventoryActionRequest;
+import com.zenith.feature.inventory.util.InventoryUtil;
+import com.zenith.util.ChatUtil;
+import org.geysermc.mcprotocollib.protocol.data.game.inventory.MoveToHotbarAction;
 import dev.zenith.pearlplus.PearlPlusConfig;
 import com.zenith.module.api.Module;
 
@@ -11,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static com.zenith.Globals.*;
 import static dev.zenith.pearlplus.PearlPlusPlugin.LOG;
@@ -174,6 +183,11 @@ public class PearlManager {
             notifier.discordAndIngameNotification(Embed.builder().title("Can't Load Pearl").description("Player is controlling").errorColor());
             return;
         }
+        
+        // Make sure there is a pearl to drop for the player before walking.
+        if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
+            ensurePearlsAvailable();
+        }
 
         BlockPos current = CACHE.getPlayerCache().getThePlayer().blockPos();
         BARITONE.rightClickBlock(pearl.x, pearl.y, pearl.z)
@@ -186,6 +200,11 @@ public class PearlManager {
                         builder.addField("Requested By", requesterName, false);
                     }
                     notifier.discordAndIngameNotification(builder);
+                    
+                     // Drop a pearl when loaded.
+                    if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
+                        handlePearlDropAfterLoad(requesterName);
+                    }
 
                     if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
                         BARITONE.pathTo(current.x(), current.z())
@@ -289,5 +308,160 @@ public class PearlManager {
 
     public void info(String message) {
         LOG.info(message);
+    }
+
+    // Check if first hotbar slot (slot 0) contains ender pearls
+    private boolean hasPearlsInHotbarSlot0() {
+        if (CACHE == null || CACHE.getPlayerCache() == null) {
+            return false;
+        }
+        
+        var playerInventory = CACHE.getPlayerCache().getPlayerInventory();
+        if (playerInventory == null) {
+            return false;
+        }
+        
+        var itemStack = playerInventory.get(36); // Hotbar slot 0 = index 36
+        if (itemStack == null) {
+            return false;
+        }
+        
+        return isEnderPearl(itemStack);
+    }
+
+    // Find pearls in inventory and move to hotbar slot 0
+    private boolean ensurePearlsAvailable() {
+        if (hasPearlsInHotbarSlot0()) {
+            return true;
+        }
+        
+        // Search for pearls in inventory
+        int pearlSlot = findEnderPearlInInventory();
+        if (pearlSlot == -1) {
+            return false; // No pearls found
+        }
+        
+        // Move pearls to hotbar slot 0
+        try {
+            INVENTORY.submit(InventoryActionRequest.builder()
+                .owner(this)
+                .actions(new MoveToHotbarSlot(pearlSlot, MoveToHotbarAction.SLOT_1))
+                .priority(1000)
+                .build());
+                info("Moved pearls to hotbar");
+            return true;
+        } catch (Exception e) {
+            LOG.warn("Failed to move pearls to hotbar slot 0", e);
+            return false;
+        }
+    }
+
+    // Drop one pearl from hotbar slot 0
+    private void dropPearlFromHotbarSlot0() {
+        try {
+            INVENTORY.submit(InventoryActionRequest.builder()
+                .owner(this)
+                .actions(new DropItem(36, org.geysermc.mcprotocollib.protocol.data.game.inventory.DropItemAction.DROP_FROM_SELECTED))
+                .priority(1000)
+                .build());
+        } catch (Exception e) {
+            LOG.warn("Failed to drop pearl from hotbar slot 0", e);
+        }
+    }
+
+    // Send out-of-pearls message to player
+    private void sendOutOfPearlsMessage(String playerName) {
+        if (playerName == null || playerName.isBlank()) {
+            return;
+        }
+        
+        String message = "I'm all out of pearls, can you give me some?";
+        notifier.sendClientPacketAsync(ChatUtil.getWhisperChatPacket(playerName, message));
+        info("Sent out-of-pearls message to " + playerName);
+    }
+
+    // Main method to handle pearl dropping after load
+    public void handlePearlDropAfterLoad(String playerName) {
+        if (!PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad) {
+            return;
+        }
+        
+        if (playerName == null || playerName.isBlank()) {
+            return;
+        }
+        
+        info("Attempting to drop pearl for " + playerName);
+        
+        if (ensurePearlsAvailable()) {
+            dropPearlFromHotbarSlot0();
+            info("Successfully dropped pearl for " + playerName);
+        } else {
+            sendOutOfPearlsMessage(playerName);
+            info("No pearls available for " + playerName + ". Begged them for drop me some.");
+        }
+    }
+
+    // Helper method to check if an item is an ender pearl
+    private boolean isEnderPearl(Object itemStack) {
+        if (itemStack == null) {
+            return false;
+        }
+        
+        try {
+            // Check if it's an ItemStack and get the item ID
+            int itemId = -1;
+            if (itemStack instanceof org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack) {
+                itemId = ((org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack) itemStack).getId();
+            } else if (itemStack instanceof com.zenith.cache.data.inventory.Container) {
+                // Handle Container.EMPTY_STACK case
+                return false;
+            }
+            
+            if (itemId == -1) {
+                return false;
+            }
+            
+            ItemData itemData = ItemRegistry.REGISTRY.get(itemId);
+            if (itemData == null) {
+                return false;
+            }
+            info(itemData.name());
+            info("id: "+itemId);
+            
+            String itemName = itemData.name();
+            
+            return itemName != null && (
+            "ENDER_PEARL".equals(itemName) ||
+            "ender_pearl".equals(itemName) ||
+            itemName.contains("ENDER_PEARL") ||
+            itemName.contains("ender_pearl")
+        );
+
+        } catch (Exception e) {
+            LOG.debug("Error checking if item is ender pearl", e);
+            return false;
+        }
+    }
+
+    // Helper method to find ender pearls in inventory
+    private int findEnderPearlInInventory() {
+        if (CACHE == null || CACHE.getPlayerCache() == null) {
+            return -1;
+        }
+        
+        var playerInventory = CACHE.getPlayerCache().getPlayerInventory();
+        if (playerInventory == null) {
+            return -1;
+        }
+        
+        // Search through all inventory slots (9-44, excluding hotbar 36-44)
+        for (int i = 9; i < playerInventory.size(); i++) {
+            var itemStack = playerInventory.get(i);
+            if (itemStack != null && isEnderPearl(itemStack)) {
+                return i;
+            }
+        }
+        
+        return -1;
     }
 }
