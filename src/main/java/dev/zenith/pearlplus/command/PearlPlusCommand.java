@@ -23,6 +23,7 @@ import static com.zenith.command.brigadier.CustomStringArgumentType.wordWithChar
 import static com.zenith.command.brigadier.ToggleArgumentType.getToggle;
 import static com.zenith.command.brigadier.ToggleArgumentType.toggle;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
+import static dev.zenith.pearlplus.PearlPlusPlugin.LOG;
 
 public class PearlPlusCommand extends Command {
     @Override
@@ -212,6 +213,65 @@ public class PearlPlusCommand extends Command {
                     PLUGIN_CONFIG.autoLoad.autoDefaultToPresent = enabled;
                     c.getSource().getEmbed()
                             .title("PearlPlus Auto Default " + toggleStrCaps(enabled));
+                    return 0;
+                })));
+
+        builder.then(literal("whitelist")
+                .then(literal("add")
+                        .then(argument("playerName", wordWithChars()).executes(c -> {
+                            String playerName = getString(c, "playerName");
+                            Optional<MinetoolsUuidResponse> result = MinetoolsApi.INSTANCE.getProfileFromUsername(playerName);
+                            if (result.isEmpty()) {
+                                c.getSource().getEmbed().title("Invalid username: " + playerName);
+                                return 0;
+                            }
+                            UUID uuid = result.get().uuid();
+                            if (PLUGIN_CONFIG.whitelist.contains(uuid)) {
+                                c.getSource().getEmbed().title(playerName + " is already whitelisted");
+                                return 0;
+                            }
+                            PLUGIN_CONFIG.whitelist.add(uuid);
+                            c.getSource().getEmbed().title("Added " + playerName + " to whitelist");
+                            LOG.info("Added " + playerName + " (" + uuid + ") to whitelist");
+                            return 0;
+                        })))
+                .then(literal("remove")
+                        .then(argument("playerName", wordWithChars()).executes(c -> {
+                            String playerName = getString(c, "playerName");
+                            Optional<MinetoolsUuidResponse> result = MinetoolsApi.INSTANCE.getProfileFromUsername(playerName);
+                            if (result.isEmpty()) {
+                                c.getSource().getEmbed().title("Invalid username: " + playerName);
+                                return 0;
+                            }
+                            UUID uuid = result.get().uuid();
+                            if (!PLUGIN_CONFIG.whitelist.contains(uuid)) {
+                                c.getSource().getEmbed().title(playerName + " is not in the whitelist");
+                                return 0;
+                            }
+                            PLUGIN_CONFIG.whitelist.remove(uuid);
+                            c.getSource().getEmbed().title("Removed " + playerName + " from whitelist");
+                            LOG.info("Removed " + playerName + " (" + uuid + ") from whitelist");
+                            return 0;
+                        })))
+                .then(literal("list").executes(c -> {
+                    if (PLUGIN_CONFIG.whitelist.isEmpty()) {
+                        c.getSource().getEmbed().title("Whitelist is empty");
+                        return 0;
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for (UUID uuid : PLUGIN_CONFIG.whitelist) {
+                        sb.append("- ").append(uuid.toString()).append("\n");
+                    }
+                    c.getSource().getEmbed()
+                            .title("Whitelist (" + PLUGIN_CONFIG.whitelist.size() + " players)")
+                            .description(sb.toString().trim());
+                    return 0;
+                }))
+                .then(literal("clear").executes(c -> {
+                    int count = PLUGIN_CONFIG.whitelist.size();
+                    PLUGIN_CONFIG.whitelist.clear();
+                    c.getSource().getEmbed().title("Cleared whitelist (" + count + " players removed)");
+                    LOG.info("Cleared whitelist (" + count + " players removed)");
                     return 0;
                 })));
 

@@ -1,7 +1,9 @@
 package dev.zenith.pearlplus;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class PearlPlusConfig {
@@ -11,6 +13,7 @@ public class PearlPlusConfig {
     public String defaultPearlId = "Base";
 
     public final Map<UUID, PlayerPearls> players = new LinkedHashMap<>();
+    public final Set<UUID> whitelist = new LinkedHashSet<>();
 
     public static class AutoLoadConfig {
         public boolean enabled = true;
