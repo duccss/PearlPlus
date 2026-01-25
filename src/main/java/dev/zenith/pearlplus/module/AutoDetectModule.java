@@ -478,7 +478,7 @@ public class AutoDetectModule extends Module {
     private BlockPosition blockPositionOf(Entity entity) {
         return new BlockPosition(
                 (int) Math.floor(entity.getX()),
-                (int) Math.floor(entity.getY()),
+                (int) Math.round(entity.getY()), // Replaced floor with round, since in rare cases the pearl Y location was wrong.
                 (int) Math.floor(entity.getZ())
         );
     }
