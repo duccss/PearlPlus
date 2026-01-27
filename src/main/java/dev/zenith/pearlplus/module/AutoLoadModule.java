@@ -38,6 +38,14 @@ public class AutoLoadModule extends Module {
         String name = sender.getName();
         UUID uuid = sender.getProfileId();
 
+        // Check whitelist for load commands
+        if (msg.startsWith("load")) {
+            if (PLUGIN_CONFIG.autoLoad.whitelistEnabled && !PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
+                // Non-whitelisted player trying to load - ignore silently
+                return;
+            }
+        }
+
         if (msg.equals("pearls")) {
             var playerEntry = PLUGIN_CONFIG.players.get(uuid);
             if (playerEntry != null && !playerEntry.pearls.isEmpty()) {
@@ -146,12 +154,23 @@ public class AutoLoadModule extends Module {
                 .addField("Pearl", requestedPearl)
         );
 
-        sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl " + requestedPearl + "..."));
+        // Check the amount of pearls left for the user. Subtract one since the pearl will be pulled after.
+        int PearlsLeft = pearlManager.countPresentPearls(uuid)-1;
+
+        // Set the default sentence to send.
+        String pearlFeedback = "You have " + PearlsLeft + " pearls left.";
+
+        if(PearlsLeft == 1){
+            pearlFeedback = "Don't forget to drop down a new pearl, this is your last one!";
+        }
 
         if (!pearlManager.isPearlPresent(pearl)) {
             sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "No pearl detected. Attempting to load anyways."));
+        }else{
+            sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl " + requestedPearl + "... "+pearlFeedback));
         }
 
         pearlManager.loadPearl(pearl, name);
+        
     }
 }

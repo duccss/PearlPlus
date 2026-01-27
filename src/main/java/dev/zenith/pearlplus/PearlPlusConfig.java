@@ -1,7 +1,9 @@
 package dev.zenith.pearlplus;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class PearlPlusConfig {
@@ -11,12 +13,15 @@ public class PearlPlusConfig {
     public String defaultPearlId = "Base";
 
     public final Map<UUID, PlayerPearls> players = new LinkedHashMap<>();
+    public final Map<UUID, WhitelistedPlayer> whitelist = new LinkedHashMap<>();
 
     public static class AutoLoadConfig {
         public boolean enabled = true;
         public boolean allowNoiseAfterPearl = true;
         public boolean returnToStartPos = true;
         public boolean autoDefaultToPresent = true;
+        public boolean whitelistEnabled = false;
+        public boolean dropPearlAfterLoad = true;
     }
 
     public static final class AutoDetectConfig {
@@ -37,5 +42,15 @@ public class PearlPlusConfig {
         public int x;
         public int y;
         public int z;
+    }
+
+    public static final class WhitelistedPlayer {
+        public String username;
+        public UUID uuid;
+        
+        public WhitelistedPlayer(String username, UUID uuid) {
+            this.username = username;
+            this.uuid = uuid;
+        }
     }
 }
