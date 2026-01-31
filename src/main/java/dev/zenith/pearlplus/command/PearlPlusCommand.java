@@ -38,6 +38,7 @@ public class PearlPlusCommand extends Command {
                 "add <playerName> <pearlId> <x> <y> <z>",
                 "del <playerName> <pearlId>",
                 "defaultpearlid <word|none>",
+                "load <playerName> <pearlId>",
                 "returnpos <on/off>",
                 "strict <on/off>",
                 "autodetect <on/off>",
@@ -140,6 +141,37 @@ public class PearlPlusCommand extends Command {
                             return 0;
                         }))));
 
+        builder.then(literal("load")
+                .then(argument("playerName", wordWithChars())
+                        .then(argument("pearlId", wordWithChars()).executes(c -> {
+                            String name = getString(c, "playerName");
+                            String pearlId = getString(c, "pearlId");
+                            Optional<MinetoolsUuidResponse> result =
+                                    MinetoolsApi.INSTANCE.getProfileFromUsername(name);
+                            if (result.isEmpty()) {
+                                c.getSource().getEmbed().title("Invalid username: " + name);
+                                return 0;
+                            }
+
+                            UUID uuid = result.get().uuid();
+                            PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
+                            String resolvedPearlId = manager.resolvePearlId(uuid, pearlId);
+                            if (resolvedPearlId == null) {
+                                c.getSource().getEmbed().title("Pearl not found for " + name);
+                                return 0;
+                            }
+
+                            var playerEntry = PLUGIN_CONFIG.players.get(uuid);
+                            if (playerEntry == null || !playerEntry.pearls.containsKey(resolvedPearlId)) {
+                                c.getSource().getEmbed().title("No authorized pearls found for " + name);
+                                return 0;
+                            }
+
+                            manager.loadPearl(playerEntry.pearls.get(resolvedPearlId), null);
+                            c.getSource().getEmbed().title("Loading pearl " + resolvedPearlId + " for " + name);
+                            return 0;
+                        }))));
+        
         builder.then(literal("defaultpearlid")
                 .then(argument("word", wordWithChars()).executes(c -> {
                     String word = getString(c, "word");
