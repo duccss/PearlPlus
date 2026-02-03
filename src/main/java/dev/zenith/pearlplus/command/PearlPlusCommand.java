@@ -328,4 +328,21 @@ public class PearlPlusCommand extends Command {
 
         return builder;
     }
+
+    @Override
+    public void defaultEmbed(final Embed builder) {
+        String defaultPearlId = PLUGIN_CONFIG.defaultPearlId == null ? "None" : PLUGIN_CONFIG.defaultPearlId;
+        builder
+                .addField("Enabled", toggleStr(PLUGIN_CONFIG.autoLoad.enabled))
+                .addField("Default Pearl ID", defaultPearlId)
+                .addField("Return Position", toggleStr(PLUGIN_CONFIG.autoLoad.returnToStartPos))
+                .addField("Strict", toggleStr(!PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl))
+                .addField("Autodetect", toggleStr(PLUGIN_CONFIG.autoDetect.enabled))
+                .addField("Autodetect Temp", toggleStr(PLUGIN_CONFIG.autoDetect.temporaryMode))
+                .addField("Distance Check", toggleStr(PLUGIN_CONFIG.autoDetect.distanceCheck))
+                .addField("Auto Default", toggleStr(PLUGIN_CONFIG.autoLoad.autoDefaultToPresent))
+                .addField("Whitelist", toggleStr(PLUGIN_CONFIG.autoLoad.whitelistEnabled))
+                .addField("Drop Pearl After Load", toggleStr(PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad))
+                .primaryColor();
+    }
 }
