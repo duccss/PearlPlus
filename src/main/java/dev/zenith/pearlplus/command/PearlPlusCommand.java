@@ -45,7 +45,7 @@ public class PearlPlusCommand extends Command {
                 "autodetect temp <on/off>",
                 "distancecheck <on/off>",
                 "autodefault <on/off>",
-                "whitelist <enable / add / clear / list / remove>",
+                "whitelist <on/off / add / clear / list / remove>",
                 "droppearlafterload <on/off>"
             )
             .aliases("pp")
@@ -251,6 +251,13 @@ public class PearlPlusCommand extends Command {
                 })));
 
         builder.then(literal("whitelist")
+                .then(argument("toggle", toggle()).executes(c -> {
+                    boolean enabled = getToggle(c, "toggle");
+                    PLUGIN_CONFIG.autoLoad.whitelistEnabled = enabled;
+                    c.getSource().getEmbed()
+                            .title("Whitelist " + toggleStrCaps(enabled));
+                    return 0;
+                }))
                 .then(literal("add")
                         .then(argument("playerName", wordWithChars()).executes(c -> {
                             String playerName = getString(c, "playerName");
@@ -307,15 +314,7 @@ public class PearlPlusCommand extends Command {
                     c.getSource().getEmbed().title("Cleared whitelist (" + count + " players removed)");
                     LOG.info("Cleared whitelist (" + count + " players removed)");
                     return 0;
-                }))
-                .then(literal("enable")
-                        .then(argument("toggle", toggle()).executes(c -> {
-                            boolean enabled = getToggle(c, "toggle");
-                            PLUGIN_CONFIG.autoLoad.whitelistEnabled = enabled;
-                            c.getSource().getEmbed()
-                                    .title("Whitelist " + toggleStrCaps(enabled));
-                            return 0;
-                        }))));
+                })));
                 
                 builder.then(literal("droppearlafterload")
                 .then(argument("toggle", toggle()).executes(c -> {
