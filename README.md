@@ -49,9 +49,9 @@ pearlplus distancecheck <on/off>
 ```
 
 ```bash
-pearlplus whitelist <on/off>
+pearlplus whitelist enable <on/off>
 pearlplus whitelist add <playername>
-pearlplus whitelist del <playername>
+pearlplus whitelist remove <playername>
 pearlplus whitelist list
 pearlplus whitelist clear
 ```
