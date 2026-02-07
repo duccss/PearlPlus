@@ -34,7 +34,8 @@ public class PearlPlusCommand extends Command {
             .description("Allow players to load pearls without whitelist through whispers.")
             .usageLines(
                 "<on/off>",
-                "list <playerName|clear>",
+                "list",
+                "list clear>",
                 "add <playerName> <pearlId> <x> <y> <z>",
                 "del <playerName> <pearlId>",
                 "defaultpearlid <word|none>",
