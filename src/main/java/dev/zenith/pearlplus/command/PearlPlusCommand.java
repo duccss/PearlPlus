@@ -34,7 +34,7 @@ public class PearlPlusCommand extends Command {
             .description("Allow players to load pearls without whitelist through whispers.")
             .usageLines(
                 "<on/off>",
-                "list",
+                "list <playerName|clear>",
                 "add <playerName> <pearlId> <x> <y> <z>",
                 "del <playerName> <pearlId>",
                 "defaultpearlid <word|none>",
@@ -73,6 +73,17 @@ public class PearlPlusCommand extends Command {
                     c.getSource().getEmbed().title("All Pearls").description(pearls);
                     return 0;
                 })
+                .then(literal("clear").executes(c -> {
+                    int playerCount = PLUGIN_CONFIG.players.size();
+                    int pearlCount = PLUGIN_CONFIG.players.values().stream()
+                            .mapToInt(playerPearls -> playerPearls.pearls.size())
+                            .sum();
+                    PLUGIN_CONFIG.players.clear();
+                    c.getSource().getEmbed()
+                            .title("Cleared pearls (" + pearlCount + " pearls removed from " + playerCount + " players)");
+                    LOG.info("Cleared pearls ({} pearls removed from {} players)", pearlCount, playerCount);
+                    return 0;
+                }))
                 .then(argument("playerName", wordWithChars()).executes(c -> {
                     String name = getString(c, "playerName");
                     Optional<MinetoolsUuidResponse> result =
