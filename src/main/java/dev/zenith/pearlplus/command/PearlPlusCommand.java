@@ -35,7 +35,7 @@ public class PearlPlusCommand extends Command {
             .usageLines(
                 "<on/off>",
                 "list",
-                "list clear>",
+                "list clear",
                 "add <playerName> <pearlId> <x> <y> <z>",
                 "del <playerName> <pearlId>",
                 "defaultpearlid <word|none>",
