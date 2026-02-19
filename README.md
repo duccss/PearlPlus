@@ -94,6 +94,16 @@ By default, the bot resolves the username of pearl throwers with entity ID's. So
 
 By default, you can add a random word after `load` or the `pearlID` to get around anti-spam. This can be disabled using `pp strict on`.
 
+#### Recommended Zenith settings
+
+`antiAFK walk off`
+
+`b allowBreak off`
+
+`b allowPlace off`
+
+These settings will stop your pearl bot walking off and prevent it breaking/placing blocks as baritone paths to the pearl trapdoor.
+
 ### Building The Plugin
 
 Clone the repo or download the zip.
