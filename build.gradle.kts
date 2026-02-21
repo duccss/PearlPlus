@@ -5,18 +5,22 @@ plugins {
 group = properties["maven_group"] as String
 version = properties["plugin_version"] as String
 val mc = properties["mc"] as String
+val pluginId = properties["plugin_id"] as String
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
 
 zenithProxyPlugin {
     templateProperties = mapOf(
-        "version" to project.version
+        "version" to project.version,
+        "plugin_id" to pluginId,
+        "mc_version" to mc,
+        "maven_group" to group as String,
     )
 }
 
 repositories {
     maven("https://maven.2b2t.vc/releases") {
-        description = "ZenithProxy Releases and Dependencies"
+        description = "ZenithProxy Releases"
     }
     maven("https://maven.2b2t.vc/remote") {
         description = "Dependencies used by ZenithProxy"

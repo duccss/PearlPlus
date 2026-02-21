@@ -8,12 +8,12 @@ import dev.zenith.pearlplus.command.*;
 import dev.zenith.pearlplus.module.*;
 
 @Plugin(
-    id = "pearlplus",
+    id = BuildConstants.PLUGIN_ID,
     version = BuildConstants.VERSION,
     description = "Slightly better pearl loading module.",
     url = "https://github.com/duccss/pearlplus/",
     authors = {"duccss", "steve2b2t"},
-    mcVersions = {"1.21.0", "1.21.4", "1.21.5", "1.21.7", "1.21.8", "1.21.10"}
+    mcVersions = "*" // mark every version compatible
 )
 
 public class PearlPlusPlugin implements ZenithProxyPlugin {
@@ -26,7 +26,7 @@ public class PearlPlusPlugin implements ZenithProxyPlugin {
         API = pluginAPI;
         LOG = pluginAPI.getLogger();
         LOG.info("PearlPlus Plugin loading...");
-        PLUGIN_CONFIG = API.registerConfig("pearlplus", PearlPlusConfig.class);
+        PLUGIN_CONFIG = API.registerConfig(BuildConstants.PLUGIN_ID, PearlPlusConfig.class);
         API.registerCommand(new PearlPlusCommand());
         API.registerModule(new AutoLoadModule());
         API.registerModule(new AutoDetectModule());
