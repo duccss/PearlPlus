@@ -30,28 +30,22 @@ repositories {
 dependencies {
     zenithProxy("com.zenith:ZenithProxy:$mc-SNAPSHOT")
 
-    /** to include dependencies into your plugin jar **/
-//    shade("com.github.ben-manes.caffeine:caffeine:3.2.0")
+    // RabbitMQ client — shaded in for optional Hydra C2 integration.
+    // Activates automatically when HYDRA_RABBIT_URL + HYDRA_AGENT_ID env vars are set.
+    // Has zero runtime impact on standalone PearlPlus deployments.
+    shade("com.rabbitmq:amqp-client:5.22.0")
 }
 
 tasks {
     shadowJar {
-        /**
-         * relocate shaded dependencies to avoid conflicts with other plugins
-         * transitive dependencies should also be relocated or removed (with exclude)
-         * build and examine your plugin jar contents to check
-         * https://gradleup.com/shadow/configuration/relocation/
-         */
-//        val basePackage = "${project.group}.shadow"
-//        relocate("com.github.benmanes.caffeine", "$basePackage.caffeine")
+        val basePackage = "${project.group}.shadow"
 
-        /**
-         * remove unneeded transitive dependencies
-         * https://gradleup.com/shadow/configuration/dependencies/#filtering-dependencies
-         */
-//        dependencies {
-//            exclude(dependency(":error_prone_annotations:.*"))
-//            exclude(dependency(":jspecify:.*"))
-//        }
+        // Relocate RabbitMQ client to avoid classpath conflicts with any other AMQP
+        // library that a host application or another plugin may ship.
+        relocate("com.rabbitmq",    "$basePackage.rabbitmq")
+        // amqp-client transitively pulls in SLF4J API — exclude since ZenithProxy provides it.
+        dependencies {
+            exclude(dependency("org.slf4j:slf4j-api:.*"))
+        }
     }
 }
