@@ -1,7 +1,9 @@
 package dev.zenith.pearlplus.module;
 
 import com.zenith.Proxy;
+import com.zenith.cache.data.chunk.Chunk;
 import com.zenith.discord.Embed;
+import com.zenith.mc.block.Block;
 import com.zenith.mc.block.BlockPos;
 import com.zenith.mc.item.ItemRegistry;
 import com.zenith.mc.item.ItemData;
@@ -170,6 +172,34 @@ public class PearlManager {
         return distance <= PLUGIN_CONFIG.autoDetect.temporaryRemovalRange;
     }
 
+    /**
+     * Scan 1-2 blocks above the pearl entity for a non-iron trapdoor.
+     * Stasis chambers place a trapdoor above the ender pearl — right-clicking
+     * the trapdoor is what triggers the pearl teleport.
+     *
+     * @return the Y coordinate to right-click, or pearl.y if no suitable trapdoor found.
+     */
+    private int findTrapdoorY(PearlPlusConfig.StoredPearl pearl) {
+        try {
+            for (int dy = 1; dy <= 2; dy++) {
+                int checkY = pearl.y + dy;
+                Chunk chunk = CACHE.getChunkCache().get(pearl.x >> 4, pearl.z >> 4);
+                if (chunk == null) break;
+                int stateId = chunk.getBlockStateId(pearl.x & 15, checkY, pearl.z & 15);
+                Block block = BLOCK_DATA.getBlockDataFromBlockStateId(stateId);
+                if (block == null) continue;
+                String name = block.name();
+                if (name != null && name.contains("trapdoor") && !name.contains("iron")) {
+                    info("Found trapdoor at Y=" + checkY + " (" + name + ") above pearl at Y=" + pearl.y);
+                    return checkY;
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("[PearlPlus] Error scanning for trapdoor above pearl", e);
+        }
+        return pearl.y;
+    }
+
     public void loadPearl(PearlPlusConfig.StoredPearl pearl, String requesterName) {
         if (pearl == null) {
             return;
@@ -183,14 +213,10 @@ public class PearlManager {
             notifier.discordAndIngameNotification(Embed.builder().title("Can't Load Pearl").description("Player is controlling").errorColor());
             return;
         }
-        
-        // Make sure there is a pearl to drop for the player before walking.
-        if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
-            ensurePearlsAvailable();
-        }
 
+        int targetY = findTrapdoorY(pearl);
         BlockPos current = CACHE.getPlayerCache().getThePlayer().blockPos();
-        BARITONE.rightClickBlock(pearl.x, pearl.y, pearl.z)
+        BARITONE.rightClickBlock(pearl.x, targetY, pearl.z)
                 .addExecutedListener(f -> {
                     var builder = Embed.builder()
                             .title("Pearl Loaded!")
