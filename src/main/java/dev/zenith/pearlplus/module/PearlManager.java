@@ -5,6 +5,8 @@ import com.zenith.discord.Embed;
 import com.zenith.mc.block.BlockPos;
 import com.zenith.mc.item.ItemRegistry;
 import com.zenith.mc.item.ItemData;
+import com.zenith.command.api.CommandContext;
+import com.zenith.command.api.CommandSources;
 import com.zenith.feature.inventory.actions.DropItem;
 import com.zenith.feature.inventory.actions.MoveToHotbarSlot;
 import com.zenith.feature.inventory.InventoryActionRequest;
@@ -190,30 +192,43 @@ public class PearlManager {
         }
 
         BlockPos current = CACHE.getPlayerCache().getThePlayer().blockPos();
-        BARITONE.rightClickBlock(pearl.x, pearl.y, pearl.z)
-                .addExecutedListener(f -> {
-                    var builder = Embed.builder()
-                            .title("Pearl Loaded!")
-                            .addField("Pearl ID", pearl.pearlId, false)
-                            .successColor();
-                    if (requesterName != null) {
-                        builder.addField("Requested By", requesterName, false);
-                    }
-                    notifier.discordAndIngameNotification(builder);
-                    
-                     // Drop a pearl when loaded.
-                    if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
-                        handlePearlDropAfterLoad(requesterName);
-                    }
+        setTraderState(false);
+        try {
+            BARITONE.rightClickBlock(pearl.x, pearl.y, pearl.z)
+                    .addExecutedListener(f -> {
+                        setTraderState(true);
+                        var builder = Embed.builder()
+                                .title("Pearl Loaded!")
+                                .addField("Pearl ID", pearl.pearlId, false)
+                                .successColor();
+                        if (requesterName != null) {
+                            builder.addField("Requested By", requesterName, false);
+                        }
+                        notifier.discordAndIngameNotification(builder);
 
-                    if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
-                        BARITONE.pathTo(current.x(), current.z())
-                                .addExecutedListener(f2 -> notifier.discordAndIngameNotification(Embed.builder()
-                                        .description("Returned to start pos")
-                                        .successColor()));
-                    }
-                });
+                        // Drop a pearl when loaded.
+                        if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
+                            handlePearlDropAfterLoad(requesterName);
+                        }
+
+                        if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
+                            BARITONE.pathTo(current.x(), current.z())
+                                    .addExecutedListener(f2 -> notifier.discordAndIngameNotification(Embed.builder()
+                                            .description("Returned to start pos")
+                                            .successColor()));
+                        }
+                    });
+        } catch (RuntimeException e) {
+            setTraderState(true);
+            throw e;
+        }
         notifier.discordAndIngameNotification(Embed.builder().title("Loading Pearl").addField("Pearl", pearl.pearlId, false).primaryColor());
+    }
+
+    private void setTraderState(boolean enabled) {
+        String command = enabled ? "trader on" : "trader off";
+        COMMAND.execute(CommandContext.create(command, CommandSources.TERMINAL));
+        info("Executed trader command: " + command);
     }
 
     public String pearlsList(UUID ownerUuid) {
