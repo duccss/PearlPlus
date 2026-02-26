@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.github.rfresh2.EventConsumer.of;
+import static com.zenith.Globals.CACHE;
 import static dev.zenith.pearlplus.PearlPlusPlugin.*;
 
 /**
@@ -218,7 +219,18 @@ public class HydraIntegration extends Module {
      * Resolves and triggers the pearl load for the given player UUID.
      * Runs on the game thread — safe to call PearlManager and Baritone.
      */
+    private boolean isPlayerOnline(UUID playerUUID) {
+        if (playerUUID == null) return false;
+        return CACHE.getTabListCache().get(playerUUID).isPresent();
+    }
+
     private void processPearlLoad(PearlLoadRequest req) {
+        // Don't waste pearls on offline players — check the server tab list first.
+        if (!isPlayerOnline(req.playerUUID())) {
+            publishResult(req.commandId(), "player_offline", -1, null, req.playerName());
+            return;
+        }
+
         PearlPlusConfig.PlayerPearls playerEntry = PLUGIN_CONFIG.players.get(req.playerUUID());
 
         if (playerEntry == null || playerEntry.pearls.isEmpty()) {

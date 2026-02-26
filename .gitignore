@@ -37,5 +37,8 @@ dataGenerator/run
 # Ignore Gradle build output directory
 build
 
+.env
+.env.deploy-c2
+
 .claude
 CLAUDE.md
