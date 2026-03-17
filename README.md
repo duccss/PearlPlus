@@ -3,7 +3,7 @@
 PearlPlus automatically detects new stasis pearls and registers them with its own pearl loader. Pearl throwers can then load these pearls through chat whispers.
 The config is saved to `plugins/config/pearlplus.json`
 
-In Zenith run `plugins download https://github.com/duccss/PearlPlus/releases/download/2.0.8/PearlPlus-2.0.8.jar` or download the [lastest build](https://github.com/duccss/PearlPlus/releases/latest) and place the jar file in your proxy's plugin folder.
+In Zenith run `plugins download https://github.com/duccss/PearlPlus/releases/download/2.0.9/PearlPlus-2.0.9.jar` or download the [lastest build](https://github.com/duccss/PearlPlus/releases/latest) and place the jar file in your proxy's plugin folder.
 
 This plugin **WILL NOT WORK** unless a correct `chatschema` is set in Zenith. Most vanilla servers like 2b2t and Constantiam don't require you to set one but other servers with custom whisper builders for example 9b9t will need one. Please check the wiki [here](https://wiki.2b2t.vc/Commands/#chatschema).
 You might also need to set the whisper command for the server you're playing on using `extraChat whisperCommand <command>` to allow the bot to whisper back.
