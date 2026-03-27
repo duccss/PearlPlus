@@ -170,50 +170,289 @@ public class PearlManager {
         return distance <= PLUGIN_CONFIG.autoDetect.temporaryRemovalRange;
     }
 
+    // find the nearest trapdoor block around the stored pearl location.
+    private BlockPos findNearestTrapdoorAround(final PearlPlusConfig.StoredPearl pearl, final int radius) {
+        if (pearl == null || CACHE == null || CACHE.getChunkCache() == null) {
+            return null;
+        }
+
+        var chunkCache = CACHE.getChunkCache();
+
+        final int baseX = pearl.x;
+        final int baseY = pearl.y;
+        final int baseZ = pearl.z;
+
+        BlockPos bestPos = null;
+        int bestDistSq = Integer.MAX_VALUE;
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            final int x = baseX + dx;
+
+            for (int dy = -radius; dy <= radius; dy++) {
+                final int y = baseY + dy;
+
+                for (int dz = -radius; dz <= radius; dz++) {
+                    final int z = baseZ + dz;
+
+                    var section = chunkCache.getChunkSection(x, y, z);
+                    if (section == null) {
+                        continue;
+                    }
+
+                    int relX = x & 15;
+                    int relY = y & 15;
+                    int relZ = z & 15;
+
+                    int stateId = section.getBlock(relX, relY, relZ);
+                    if (stateId == 0) {
+                        continue; // air / unknown, skip quickly
+                    }
+
+                    var block = BLOCK_DATA.getBlockDataFromBlockStateId(stateId);
+                    if (block == null) {
+                        continue;
+                    }
+
+                    String name = block.name();
+                    if (!name.endsWith("_trapdoor")) {
+                        continue;
+                    }
+
+                    int distSq = dx * dx + dy * dy + dz * dz;
+                    if (distSq < bestDistSq) {
+                        bestDistSq = distSq;
+                        bestPos = new BlockPos(x, y, z);
+                    }
+                }
+            }
+        }
+
+        return bestPos;
+    }
+
+    private BlockPos findAdjacentWalkableBlock(final BlockPos trapdoorPos) {
+        if (trapdoorPos == null || CACHE == null || CACHE.getChunkCache() == null) {
+            info("Walkable search aborted: missing trapdoorPos or chunk cache");
+            return null;
+        }
+
+        var chunkCache = CACHE.getChunkCache();
+
+        final int tx = (int) trapdoorPos.x();
+        final int ty = (int) trapdoorPos.y();
+        final int tz = (int) trapdoorPos.z();
+
+        // check 4 cardinal neighbours around the trapdoor
+        int[][] offsets = {
+                { 1, 0 },
+                { -1, 0 },
+                { 0, 1 },
+                { 0, -1 }
+        };
+
+        for (int[] off : offsets) {
+            int x = tx + off[0];
+            int z = tz + off[1];
+            int groundY = ty - 1; // assume floor is one below trapdoor
+
+            // ground block
+            var groundSection = chunkCache.getChunkSection(x, groundY, z);
+            if (groundSection == null) {
+                continue;
+            }
+
+            int relX = x & 15;
+            int relY = groundY & 15;
+            int relZ = z & 15;
+
+            int groundStateId = groundSection.getBlock(relX, relY, relZ);
+            if (groundStateId == 0) {
+                // air / unknown not walkable
+                continue;
+            }
+
+            var groundBlock = BLOCK_DATA.getBlockDataFromBlockStateId(groundStateId);
+            if (groundBlock == null) {
+                continue;
+            }
+
+            String groundName = groundBlock.name();
+
+            if (groundName.contains("water")
+                    || groundName.contains("lava")
+                    || groundName.endsWith("_trapdoor")
+                    || groundName.contains("ladder")
+                    || groundName.contains("vine")
+                    || groundName.contains("scaffolding")) {
+                continue;
+            }
+
+            // check the space where the player will stand
+            int headY = groundY + 1;
+            var headSection = chunkCache.getChunkSection(x, headY, z);
+            if (headSection == null) {
+                continue;
+            }
+
+            int headStateId = headSection.getBlock(x & 15, headY & 15, z & 15);
+            if (headStateId != 0) {
+                var headBlock = BLOCK_DATA.getBlockDataFromBlockStateId(headStateId);
+                if (headBlock != null) {
+                    String headName = headBlock.name();
+                    if (!headName.contains("air")) {
+                        continue;
+                    }
+                }
+            }
+
+            BlockPos walkPos = new BlockPos(x, groundY, z);
+            info("Found adjacent walkable block near trapdoor at ["
+                    + tx + ", " + ty + ", " + tz + "] -> ["
+                    + walkPos.x() + ", " + walkPos.y() + ", " + walkPos.z() + "]");
+            return walkPos;
+        }
+
+        info("No adjacent walkable block found around trapdoor at ["
+                + tx + ", " + ty + ", " + tz + "]");
+        return null;
+    }
+
     public void loadPearl(PearlPlusConfig.StoredPearl pearl, String requesterName) {
         if (pearl == null) {
             return;
         }
         Proxy proxy = Proxy.getInstance();
         if (proxy == null || !proxy.isConnected() || proxy.isInQueue()) {
-            notifier.discordAndIngameNotification(Embed.builder().title("Can't Load Pearl").description("Bot is not online").errorColor());
+            notifier.discordAndIngameNotification(Embed.builder()
+                    .title("Can't Load Pearl")
+                    .description("Bot is not online")
+                    .errorColor());
             return;
         }
         if (proxy.hasActivePlayer()) {
-            notifier.discordAndIngameNotification(Embed.builder().title("Can't Load Pearl").description("Player is controlling").errorColor());
+            notifier.discordAndIngameNotification(Embed.builder()
+                    .title("Can't Load Pearl")
+                    .description("Player is controlling")
+                    .errorColor());
             return;
         }
-        
-        // Make sure there is a pearl to drop for the player before walking.
-        if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
+
+        // make sure there is a pearl to drop for the player before walking.
+        if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad) {
             ensurePearlsAvailable();
         }
 
+        // remember where we started so we can go back later.
         BlockPos current = CACHE.getPlayerCache().getThePlayer().blockPos();
-        BARITONE.rightClickBlock(pearl.x, pearl.y, pearl.z)
-                .addExecutedListener(f -> {
-                    var builder = Embed.builder()
-                            .title("Pearl Loaded!")
-                            .addField("Pearl ID", pearl.pearlId, false)
-                            .successColor();
-                    if (requesterName != null) {
-                        builder.addField("Requested By", requesterName, false);
-                    }
-                    notifier.discordAndIngameNotification(builder);
-                    
-                     // Drop a pearl when loaded.
-                    if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad == true) {
-                        handlePearlDropAfterLoad(requesterName);
-                    }
 
-                    if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
-                        BARITONE.pathTo(current.x(), current.z())
-                                .addExecutedListener(f2 -> notifier.discordAndIngameNotification(Embed.builder()
-                                        .description("Returned to start pos")
-                                        .successColor()));
-                    }
+        // locate the trapdoor for this pearl
+        BlockPos trapdoorPos = findNearestTrapdoorAround(pearl, 3); // radius 3 is usually plenty
+
+        if (trapdoorPos == null) {
+            info("No trapdoor detected for pearl " + pearl.pearlId
+                    + ", falling back to original behaviour (click stored block)");
+            // fall back
+            final int targetX = pearl.x;
+            final int targetY = pearl.y;
+            final int targetZ = pearl.z;
+            final BlockPos startPos = current;
+
+            BARITONE.rightClickBlock(targetX, targetY, targetZ)
+                    .addExecutedListener(f -> {
+                        var builder = Embed.builder()
+                                .title("Pearl Loaded!")
+                                .addField("Pearl ID", pearl.pearlId, false)
+                                .successColor();
+                        if (requesterName != null) {
+                            builder.addField("Requested By", requesterName, false);
+                        }
+                        notifier.discordAndIngameNotification(builder);
+
+                        if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad) {
+                            handlePearlDropAfterLoad(requesterName);
+                        }
+
+                        if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
+                            BARITONE.pathTo(startPos.x(), startPos.z())
+                                    .addExecutedListener(f2 -> notifier.discordAndIngameNotification(
+                                            Embed.builder()
+                                                    .description("Returned to start pos")
+                                                    .successColor()
+                                    ));
+                        }
+                    });
+
+            notifier.discordAndIngameNotification(Embed.builder()
+                    .title("Loading Pearl")
+                    .addField("Pearl", pearl.pearlId, false)
+                    .primaryColor());
+            return;
+        }
+
+        int trapX = (int) trapdoorPos.x();
+        int trapY = (int) trapdoorPos.y();
+        int trapZ = (int) trapdoorPos.z();
+        info("Loading pearl " + pearl.pearlId + " using trapdoor at ["
+                + trapX + ", " + trapY + ", " + trapZ + "]");
+
+        // 2) Find a safe adjacent floor block to stand on
+        BlockPos walkPos = findAdjacentWalkableBlock(trapdoorPos);
+
+        int pathX = trapX;
+        int pathZ = trapZ;
+
+        if (walkPos != null) {
+            pathX = (int) walkPos.x();
+            pathZ = (int) walkPos.z();
+            info("Pathing to adjacent walkable block [" + pathX + ", " + walkPos.y() + ", " + pathZ + "]"
+                    + " and then clicking trapdoor");
+        } else {
+            info("No adjacent walkable block found, pathing directly to trapdoor column [" + pathX + ", " + pathZ + "]");
+        }
+
+        final int targetX = trapX;
+        final int targetY = trapY;
+        final int targetZ = trapZ;
+        final int pathTargetX = pathX;
+        final int pathTargetZ = pathZ;
+        final BlockPos startPos = current;
+
+        // path to the walkable block and right-click the trapdoor
+        BARITONE.pathTo(pathTargetX, pathTargetZ)
+                .addExecutedListener(pathFuture -> {
+                    // once pathing attempt is "done", try the click regardless of success/failure.
+                    BARITONE.rightClickBlock(targetX, targetY, targetZ)
+                            .addExecutedListener(f -> {
+                                var builder = Embed.builder()
+                                        .title("Pearl Loaded!")
+                                        .addField("Pearl ID", pearl.pearlId, false)
+                                        .successColor();
+                                if (requesterName != null) {
+                                    builder.addField("Requested By", requesterName, false);
+                                }
+                                notifier.discordAndIngameNotification(builder);
+
+                                // drop a pearl when loaded.
+                                if (PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad) {
+                                    handlePearlDropAfterLoad(requesterName);
+                                }
+
+                                // return to start position.
+                                if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
+                                    BARITONE.pathTo(startPos.x(), startPos.z())
+                                            .addExecutedListener(f2 -> notifier.discordAndIngameNotification(
+                                                    Embed.builder()
+                                                            .description("Returned to start pos")
+                                                            .successColor()
+                                            ));
+                                }
+                            });
                 });
-        notifier.discordAndIngameNotification(Embed.builder().title("Loading Pearl").addField("Pearl", pearl.pearlId, false).primaryColor());
+
+        notifier.discordAndIngameNotification(Embed.builder()
+                .title("Loading Pearl")
+                .addField("Pearl", pearl.pearlId, false)
+                .primaryColor());
     }
 
     public String pearlsList(UUID ownerUuid) {
