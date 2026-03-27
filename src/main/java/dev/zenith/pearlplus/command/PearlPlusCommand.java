@@ -6,13 +6,11 @@ import com.zenith.command.api.CommandCategory;
 import com.zenith.command.api.CommandContext;
 import com.zenith.command.api.CommandUsage;
 import com.zenith.discord.Embed;
-import com.zenith.feature.api.minetools.MinetoolsApi;
-import com.zenith.feature.api.minetools.model.MinetoolsUuidResponse;
+import com.zenith.feature.whitelist.PlayerListsManager;
 import dev.zenith.pearlplus.module.AutoLoadModule;
 import dev.zenith.pearlplus.module.AutoDetectModule;
 import dev.zenith.pearlplus.module.PearlManager;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
@@ -87,13 +85,12 @@ public class PearlPlusCommand extends Command {
                 }))
                 .then(argument("playerName", wordWithChars()).executes(c -> {
                     String name = getString(c, "playerName");
-                    Optional<MinetoolsUuidResponse> result =
-                            MinetoolsApi.INSTANCE.getProfileFromUsername(name);
-                    if (result.isEmpty()) {
+                    UUID uuid = resolveUuidByUsername(name);
+                    if (uuid == null) {
                         c.getSource().getEmbed().title("Invalid username: " + name);
                         return 0;
                     }
-                    UUID uuid = result.get().uuid();
+
                     PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
                     String pearls = manager.pearlsListWithCoords(uuid);
                     c.getSource().getEmbed().title("Pearls for " + name).description(pearls);
@@ -108,9 +105,8 @@ public class PearlPlusCommand extends Command {
                                                 .then(argument("z", integer()).executes(c -> {
                                                     String name = getString(c, "playerName");
                                                     String pearlId = getString(c, "pearlId");
-                                                    Optional<MinetoolsUuidResponse> result =
-                                                            MinetoolsApi.INSTANCE.getProfileFromUsername(name);
-                                                    if (result.isEmpty()) {
+                                                    UUID uuid = resolveUuidByUsername(name);
+                                                    if (uuid == null) {
                                                         c.getSource().getEmbed().title("Invalid username: " + name);
                                                         return 0;
                                                     }
@@ -119,7 +115,6 @@ public class PearlPlusCommand extends Command {
                                                     int y = getInteger(c, "y");
                                                     int z = getInteger(c, "z");
 
-                                                    UUID uuid = result.get().uuid();
                                                     PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
                                                     manager.recordPearl(uuid, name, pearlId, x, y, z);
                                                     c.getSource().getEmbed()
@@ -133,14 +128,12 @@ public class PearlPlusCommand extends Command {
                         .then(argument("pearlId", wordWithChars()).executes(c -> {
                             String name = getString(c, "playerName");
                             String pearlId = getString(c, "pearlId");
-                            Optional<MinetoolsUuidResponse> result =
-                                    MinetoolsApi.INSTANCE.getProfileFromUsername(name);
-                            if (result.isEmpty()) {
+                            UUID uuid = resolveUuidByUsername(name);
+                            if (uuid == null) {
                                 c.getSource().getEmbed().title("Invalid username: " + name);
                                 return 0;
                             }
 
-                            UUID uuid = result.get().uuid();
                             PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
                             String resolvedPearlId = manager.resolvePearlId(uuid, pearlId);
                             if (resolvedPearlId == null) {
@@ -158,14 +151,12 @@ public class PearlPlusCommand extends Command {
                         .then(argument("pearlId", wordWithChars()).executes(c -> {
                             String name = getString(c, "playerName");
                             String pearlId = getString(c, "pearlId");
-                            Optional<MinetoolsUuidResponse> result =
-                                    MinetoolsApi.INSTANCE.getProfileFromUsername(name);
-                            if (result.isEmpty()) {
+                            UUID uuid = resolveUuidByUsername(name);
+                            if (uuid == null) {
                                 c.getSource().getEmbed().title("Invalid username: " + name);
                                 return 0;
                             }
 
-                            UUID uuid = result.get().uuid();
                             PearlManager manager = new PearlManager(MODULE.get(AutoDetectModule.class));
                             String resolvedPearlId = manager.resolvePearlId(uuid, pearlId);
                             if (resolvedPearlId == null) {
@@ -273,12 +264,12 @@ public class PearlPlusCommand extends Command {
                 .then(literal("add")
                         .then(argument("playerName", wordWithChars()).executes(c -> {
                             String playerName = getString(c, "playerName");
-                            Optional<MinetoolsUuidResponse> result = MinetoolsApi.INSTANCE.getProfileFromUsername(playerName);
-                            if (result.isEmpty()) {
+                            UUID uuid = resolveUuidByUsername(playerName);
+                            if (uuid == null) {
                                 c.getSource().getEmbed().title("Invalid username: " + playerName);
                                 return 0;
                             }
-                            UUID uuid = result.get().uuid();
+
                             if (PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
                                 c.getSource().getEmbed().title(playerName + " is already whitelisted");
                                 return 0;
@@ -291,12 +282,12 @@ public class PearlPlusCommand extends Command {
                 .then(literal("remove")
                         .then(argument("playerName", wordWithChars()).executes(c -> {
                             String playerName = getString(c, "playerName");
-                            Optional<MinetoolsUuidResponse> result = MinetoolsApi.INSTANCE.getProfileFromUsername(playerName);
-                            if (result.isEmpty()) {
+                            UUID uuid = resolveUuidByUsername(playerName);
+                            if (uuid == null) {
                                 c.getSource().getEmbed().title("Invalid username: " + playerName);
                                 return 0;
                             }
-                            UUID uuid = result.get().uuid();
+
                             if (!PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
                                 c.getSource().getEmbed().title(playerName + " is not in the whitelist");
                                 return 0;
@@ -355,5 +346,11 @@ public class PearlPlusCommand extends Command {
                 .addField("Whitelist", toggleStr(PLUGIN_CONFIG.autoLoad.whitelistEnabled))
                 .addField("Drop Pearl After Load", toggleStr(PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad))
                 .primaryColor();
+    }
+
+    private UUID resolveUuidByUsername(final String username) {
+        return PlayerListsManager.getProfileFromUsername(username)
+                .map(profile -> profile.uuid())
+                .orElse(null);
     }
 }
