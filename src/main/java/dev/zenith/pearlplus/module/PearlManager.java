@@ -373,7 +373,7 @@ public class PearlManager {
                         }
 
                         if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
-                            BARITONE.pathTo(startPos.x(), startPos.z())
+                            BARITONE.pathTo(startPos.x(), startPos.y(), startPos.z())
                                     .addExecutedListener(f2 -> notifier.discordAndIngameNotification(
                                             Embed.builder()
                                                     .description("Returned to start pos")
@@ -439,7 +439,7 @@ public class PearlManager {
 
                                 // return to start position.
                                 if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
-                                    BARITONE.pathTo(startPos.x(), startPos.z())
+                                    BARITONE.pathTo(startPos.x(), startPos.y(), startPos.z())
                                             .addExecutedListener(f2 -> notifier.discordAndIngameNotification(
                                                     Embed.builder()
                                                             .description("Returned to start pos")
