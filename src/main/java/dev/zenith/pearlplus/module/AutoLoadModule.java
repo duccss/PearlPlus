@@ -38,8 +38,11 @@ public class AutoLoadModule extends Module {
         String name = sender.getName();
         UUID uuid = sender.getProfileId();
 
+        String loadCommand = PLUGIN_CONFIG.autoLoad.loadCommand == null || PLUGIN_CONFIG.autoLoad.loadCommand.isBlank()
+                ? "load" : PLUGIN_CONFIG.autoLoad.loadCommand.toLowerCase();
+
         // Check whitelist for load commands
-        if (msg.startsWith("load")) {
+        if (msg.startsWith(loadCommand)) {
             if (PLUGIN_CONFIG.autoLoad.whitelistEnabled && !PLUGIN_CONFIG.whitelist.containsKey(uuid)) {
                 // Non-whitelisted player trying to load - ignore silently
                 return;
@@ -106,7 +109,7 @@ public class AutoLoadModule extends Module {
             return;
         }
 
-        if (!msg.startsWith("load")) return;
+        if (!msg.startsWith(loadCommand)) return;
 
         var playerEntry = PLUGIN_CONFIG.players.get(uuid);
         if (playerEntry == null || playerEntry.pearls.isEmpty()) {

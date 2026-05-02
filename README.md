@@ -39,6 +39,9 @@ pearlplus autodefault <on/off>
 pearlplus strict <on/off>
 ```
 ```bash
+pearlplus loadcommand <word>
+```
+```bash
 pearlplus autodetect <on/off>
 ```
 ```bash
@@ -75,7 +78,7 @@ There are a few in-game commands players can whisper to the bot to manage their 
 
 ### Usage
 
-Simply throw a new ender pearl and once it becomes stable the bot will register it, setting the pearlID as "Base" by default with an incrementing number for subsequent pearls. That player can now whisper `load` to the zenith bot and the bot will load the pearl. Players with multiple pearls can add the pearlID after `load` to have a specific pearl loaded. Players will receive a warning whisper when loading a stasis chamber where a pearl isn't detected.
+Simply throw a new ender pearl and once it becomes stable the bot will register it, setting the pearlID as "Base" by default with an incrementing number for subsequent pearls. That player can now whisper `load` (or your configured load command) to the zenith bot and the bot will load the pearl. Players with multiple pearls can add the pearlID after the trigger word to have a specific pearl loaded. Players will receive a warning whisper when loading a stasis chamber where a pearl isn't detected.
 ```bash
 /w <botName> load <optionalID> 
 ```

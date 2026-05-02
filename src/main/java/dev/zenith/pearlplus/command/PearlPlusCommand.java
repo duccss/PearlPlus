@@ -40,6 +40,7 @@ public class PearlPlusCommand extends Command {
                 "load <playerName> <pearlId>",
                 "returnpos <on/off>",
                 "strict <on/off>",
+                "loadcommand <word>",
                 "autodetect <on/off>",
                 "autodetect temp <on/off>",
                 "distancecheck <on/off>",
@@ -185,6 +186,19 @@ public class PearlPlusCommand extends Command {
                         PLUGIN_CONFIG.defaultPearlId = word;
                         c.getSource().getEmbed().title("Pearl ID word set to '" + word + "'");
                     }
+                    return 0;
+                })));
+
+
+        builder.then(literal("loadcommand")
+                .then(argument("word", wordWithChars()).executes(c -> {
+                    String word = getString(c, "word").trim();
+                    if (word.isEmpty()) {
+                        c.getSource().getEmbed().title("Load trigger word cannot be empty");
+                        return 0;
+                    }
+                    PLUGIN_CONFIG.autoLoad.loadCommand = word;
+                    c.getSource().getEmbed().title("Load trigger word set to '" + word + "'");
                     return 0;
                 })));
 
@@ -339,6 +353,7 @@ public class PearlPlusCommand extends Command {
                 .addField("Default Pearl ID", defaultPearlId)
                 .addField("Return Position", toggleStr(PLUGIN_CONFIG.autoLoad.returnToStartPos))
                 .addField("Strict", toggleStr(!PLUGIN_CONFIG.autoLoad.allowNoiseAfterPearl))
+                .addField("Load Command", PLUGIN_CONFIG.autoLoad.loadCommand)
                 .addField("Autodetect", toggleStr(PLUGIN_CONFIG.autoDetect.enabled))
                 .addField("Autodetect Temp", toggleStr(PLUGIN_CONFIG.autoDetect.temporaryMode))
                 .addField("Distance Check", toggleStr(PLUGIN_CONFIG.autoDetect.distanceCheck))
