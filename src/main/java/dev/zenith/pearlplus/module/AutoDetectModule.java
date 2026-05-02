@@ -288,8 +288,11 @@ public class AutoDetectModule extends Module {
             return false;
         }
 
+        String loadCommand = PLUGIN_CONFIG.autoLoad.loadCommand == null || PLUGIN_CONFIG.autoLoad.loadCommand.isBlank()
+                ? "load" : PLUGIN_CONFIG.autoLoad.loadCommand;
+
         String message = determineBotName()
-                .map(botName -> String.format("Pearl Registered. Load me with /w %s load %s", botName, pearlId))
+                .map(botName -> String.format("Pearl Registered. Load me with /w %s %s %s", botName, loadCommand, pearlId))
                 .orElse(String.format("Pearl Registered as %s.", pearlId));
         sendClientPacketAsync(ChatUtil.getWhisperChatPacket(ownerName, message));
         info(String.format(
