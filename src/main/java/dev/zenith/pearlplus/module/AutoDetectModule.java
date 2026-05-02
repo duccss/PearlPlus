@@ -311,7 +311,7 @@ public class AutoDetectModule extends Module {
                 .title("Pearl Registered")
                 .addField("Pearl", pearlId)
                 .addField("Owner", ownerSummary)
-                .addField("Position", String.format("%d %d %d", position.x(), position.y(), position.z()))
+                .addField("Position", String.format("||%d %d %d||", position.x(), position.y(), position.z()))
         );
     }
 
@@ -582,7 +582,7 @@ public class AutoDetectModule extends Module {
                 .title("Pearl Removal Warning")
                 .addField("Owner", trackedPearl.ownerSummary())
                 .addField("Pearl", trackedPearl.pearlId() == null ? "unknown" : trackedPearl.pearlId())
-                .addField("Position", String.format("%d %d %d", trackedPearl.blockX(), trackedPearl.blockY(), trackedPearl.blockZ()));
+                .addField("Position", String.format("||%d %d %d||", trackedPearl.blockX(), trackedPearl.blockY(), trackedPearl.blockZ()));
         discordAndIngameNotification(builder);
     }
 

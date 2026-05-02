@@ -119,7 +119,7 @@ public class PearlPlusCommand extends Command {
                                                     manager.recordPearl(uuid, name, pearlId, x, y, z);
                                                     c.getSource().getEmbed()
                                                             .title("Pearl stored for " + name)
-                                                            .description(String.format("%s at %d %d %d", pearlId, x, y, z));
+                                                            .description(String.format("%s at ||%d %d %d||", pearlId, x, y, z));
                                                     return 0;
                                                 })))))));
 
