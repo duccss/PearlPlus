@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.github.rfresh2.EventConsumer.of;
-import static com.zenith.Globals.*;
 import static dev.zenith.pearlplus.PearlPlusPlugin.PLUGIN_CONFIG;
 
 public class AutoLoadModule extends Module {
