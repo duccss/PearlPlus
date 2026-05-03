@@ -12,7 +12,7 @@ import dev.zenith.pearlplus.module.*;
     version = BuildConstants.VERSION,
     description = "Slightly better pearl loading module.",
     url = "https://github.com/duccss/pearlplus/",
-    authors = {"duccss", "steve2b2t", "Leotonic"},
+    authors = {"duccss", "steve2b2t", "Leonetic"},
     mcVersions = "*" // mark every version compatible
 )
 
