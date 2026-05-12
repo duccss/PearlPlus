@@ -221,7 +221,7 @@ public class PearlManager {
                     }
 
                     if (PLUGIN_CONFIG.autoLoad.returnToStartPos) {
-                        BARITONE.pathTo(current.x(), current.z())
+                        BARITONE.pathTo(current.x(), current.y(), current.z())
                                 .addExecutedListener(f2 -> notifier.discordAndIngameNotification(Embed.builder()
                                         .description("Returned to start pos")
                                         .successColor()));
