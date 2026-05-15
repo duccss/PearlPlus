@@ -10,6 +10,9 @@ You might also need to set the whisper command for the server you're playing on 
 
 If you're chat banned/muted you can load pearls in your client using [PearlPlusMod](https://github.com/duccss/PearlPlusMod) and [PearlPlusWebAPI](https://github.com/duccss/PearlPlusWebAPI) which bypass's chat.
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/duccss/PearlPlus/build.yml?branch=1.21.4&style=for-the-badge)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/duccss/PearlPlus/total?style=for-the-badge)
+
 ### Management Commands
 
 #### You can use either `pp` or `pearlplus`
