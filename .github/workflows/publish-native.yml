@@ -91,4 +91,5 @@ jobs:
           artifacts: |
             artifacts/linux/*
             artifacts/windows/*
-          generateReleaseNotes: true
+          allowUpdates: true
+          omitBodyDuringUpdate: true
