@@ -33,11 +33,16 @@ jobs:
       - name: Build Native Image (Linux)
         run: ./gradlew nativeCompile
 
+      - name: Zip Linux Binary
+        run: |
+          mkdir -p artifacts
+          zip -j artifacts/PearlPlus-linux.zip build/native/nativeCompile/*
+
       - name: Upload Linux Binary
         uses: actions/upload-artifact@v4
         with:
           name: plugin-linux
-          path: build/native/nativeCompile/*
+          path: artifacts/PearlPlus-linux.zip
           if-no-files-found: error
 
   build-native-windows:
@@ -61,11 +66,15 @@ jobs:
         shell: cmd
         run: ./gradlew nativeCompile
 
+      - name: Zip Windows Binary
+        run: Compress-Archive -Path build/native/nativeCompile/* -DestinationPath artifacts/PearlPlus-windows.zip
+        shell: pwsh
+
       - name: Upload Windows Binary
         uses: actions/upload-artifact@v4
         with:
           name: plugin-windows
-          path: build/native/nativeCompile/*
+          path: artifacts/PearlPlus-windows.zip
           if-no-files-found: error
 
   release:
@@ -76,20 +85,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: plugin-linux
-          path: artifacts/linux
+          path: artifacts
 
       - name: Download Windows Binary
         uses: actions/download-artifact@v4
         with:
           name: plugin-windows
-          path: artifacts/windows
+          path: artifacts
 
       - name: Publish GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ needs.build-native-linux.outputs.plugin_version }}
           artifacts: |
-            artifacts/linux/*
-            artifacts/windows/*
+            artifacts/PearlPlus-linux.zip
+            artifacts/PearlPlus-windows.zip
           allowUpdates: true
           omitBodyDuringUpdate: true
