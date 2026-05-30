@@ -77,7 +77,7 @@ graalvmNative {
             }
             imageName = properties["plugin_name"] as String
             mainClass = "com.zenith.Proxy"
-            quickBuild = true // set to true for fast builds while developing
+            quickBuild = false // set to true for fast builds while developing
             verbose = true
             sharedLibrary = false
             buildArgs.addAll(
