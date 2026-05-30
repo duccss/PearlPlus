@@ -67,8 +67,10 @@ jobs:
         run: ./gradlew nativeCompile
 
       - name: Zip Windows Binary
-        run: Compress-Archive -Path build/native/nativeCompile/* -DestinationPath artifacts/PearlPlus-windows.zip
         shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Compress-Archive -Path build/native/nativeCompile/* -DestinationPath artifacts/PearlPlus-windows.zip
 
       - name: Upload Windows Binary
         uses: actions/upload-artifact@v4
