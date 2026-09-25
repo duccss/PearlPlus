@@ -3,16 +3,16 @@
 PearlPlus automatically detects new stasis pearls and registers them with its own pearl loader. Pearl throwers can then load these pearls through chat whispers.
 The config is saved to `plugins/config/pearlplus.json`
 
-In Zenith run `plugins download https://github.com/steve2b2t/PearlPlus-ng/releases/download/2.2.1/PearlPlus-2.2.1.jar` or download the [latest build](https://github.com/steve2b2t/PearlPlus-ng/releases/latest) and place the jar file in your proxy's plugin folder.
+In Zenith run `plugins download https://github.com/duccss/PearlPlus/releases/download/2.2.1/PearlPlus-2.2.1.jar` or download the [latest build](https://github.com/duccss/PearlPlus/releases/latest) and place the jar file in your proxy's plugin folder.
 
 This plugin **WILL NOT WORK** unless a correct `chatschema` is set in Zenith. Most vanilla servers like 2b2t and Constantiam don't require you to set one but other servers with custom whisper builders for example 9b9t will need one. Please check the wiki [here](https://wiki.2b2t.vc/Commands/#chatschema).
 You might also need to set the whisper command for the server you're playing on using `extraChat whisperCommand <command>` to allow the bot to whisper back.
 
 If you're chat banned/muted you can load pearls in your client using [PearlPlusMod](https://github.com/duccss/PearlPlusMod) and [PearlPlusWebAPI](https://github.com/duccss/PearlPlusWebAPI) which bypass's chat.
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/steve2b2t/PearlPlus-ng/build.yml?branch=master&style=for-the-badge)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/steve2b2t/PearlPlus-ng/total?style=for-the-badge&label=DOWNLOADS%20-%20ALL)
-![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/steve2b2t/PearlPlus-ng/latest/total?style=for-the-badge&label=DOWNLOADS%20-%20Latest)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/duccss/PearlPlus/build.yml?branch=1.21.4&style=for-the-badge)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/duccss/PearlPlus/total?style=for-the-badge&label=DOWNLOADS%20-%20ALL)
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/duccss/PearlPlus/latest/total?style=for-the-badge&label=DOWNLOADS%20-%20Latest)
 
 
 ### Management Commands
@@ -133,6 +133,6 @@ These settings will stop your pearl bot walking off and prevent it breaking/plac
 
 ### Building The Plugin
 
-Clone [https://github.com/steve2b2t/PearlPlus-ng](https://github.com/steve2b2t/PearlPlus-ng) or download the zip.
+Clone [https://github.com/duccss/PearlPlus](https://github.com/duccss/PearlPlus) or download the zip.
 Run `chmod +x gradlew`
  then `./gradlew build`
