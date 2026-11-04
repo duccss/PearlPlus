@@ -6,10 +6,12 @@ import com.zenith.command.api.CommandCategory;
 import com.zenith.command.api.CommandContext;
 import com.zenith.command.api.CommandUsage;
 import com.zenith.discord.Embed;
+import com.zenith.feature.player.World;
 import com.zenith.feature.whitelist.PlayerListsManager;
 import dev.zenith.pearlplus.module.AutoLoadModule;
 import dev.zenith.pearlplus.module.AutoDetectModule;
 import dev.zenith.pearlplus.module.PearlManager;
+import dev.zenith.pearlplus.module.PearlRestockModule;
 
 import java.util.UUID;
 
@@ -46,7 +48,10 @@ public class PearlPlusCommand extends Command {
                 "distancecheck <on/off>",
                 "autodefault <on/off>",
                 "whitelist <on/off / add / clear / list / remove>",
-                "droppearlafterload <on/off>"
+                "droppearlafterload <on/off>",
+                "set-restock-container <x> <y> <z>",
+                "set-restock-container clear",
+                "debug <true/false>"
             )
             .aliases("pp")
             .build();
@@ -171,7 +176,7 @@ public class PearlPlusCommand extends Command {
                                 return 0;
                             }
 
-                            manager.loadPearl(playerEntry.pearls.get(resolvedPearlId), null);
+                            manager.loadPearl(playerEntry.pearls.get(resolvedPearlId), null, uuid);
                             c.getSource().getEmbed().title("Loading pearl " + resolvedPearlId + " for " + name);
                             return 0;
                         }))));
@@ -342,6 +347,47 @@ public class PearlPlusCommand extends Command {
                     return 0;
                 })));
 
+        builder.then(literal("set-restock-container")
+                .then(literal("clear").executes(c -> {
+                    PLUGIN_CONFIG.restock.enabled = false;
+                    MODULE.get(PearlRestockModule.class).syncEnabledFromConfig();
+                    c.getSource().getEmbed().title("Restock container cleared");
+                    return 0;
+                }))
+                .then(argument("x", integer())
+                        .then(argument("y", integer())
+                                .then(argument("z", integer()).executes(c -> {
+                                    int x = getInteger(c, "x");
+                                    int y = getInteger(c, "y");
+                                    int z = getInteger(c, "z");
+                                    PLUGIN_CONFIG.restock.x = x;
+                                    PLUGIN_CONFIG.restock.y = y;
+                                    PLUGIN_CONFIG.restock.z = z;
+                                    PLUGIN_CONFIG.restock.enabled = true;
+                                    MODULE.get(PearlRestockModule.class).syncEnabledFromConfig();
+
+                                    var embed = c.getSource().getEmbed()
+                                            .title("Restock container set")
+                                            .description(String.format("||%d %d %d||", x, y, z));
+                                    if (World.isChunkLoadedBlockPos(x, z)) {
+                                        String blockName = World.getBlock(x, y, z).name();
+                                        embed.addField("Block At Position", blockName);
+                                        if (!looksLikeStorage(blockName)) {
+                                            embed.addField("Warning", "Block may not be a storage container");
+                                        }
+                                    }
+                                    return 0;
+                                })))));
+
+        builder.then(literal("debug")
+                .then(argument("toggle", toggle()).executes(c -> {
+                    boolean enabled = getToggle(c, "toggle");
+                    PLUGIN_CONFIG.debug = enabled;
+                    c.getSource().getEmbed()
+                            .title("PearlPlus debug " + toggleStrCaps(enabled));
+                    return 0;
+                })));
+
         return builder;
     }
 
@@ -360,7 +406,29 @@ public class PearlPlusCommand extends Command {
                 .addField("Auto Default", toggleStr(PLUGIN_CONFIG.autoLoad.autoDefaultToPresent))
                 .addField("Whitelist", toggleStr(PLUGIN_CONFIG.autoLoad.whitelistEnabled))
                 .addField("Drop Pearl After Load", toggleStr(PLUGIN_CONFIG.autoLoad.dropPearlAfterLoad))
+                .addField("Restock Container", restockContainerField())
+                .addField("Debug", toggleStr(PLUGIN_CONFIG.debug))
                 .primaryColor();
+    }
+
+    private static String restockContainerField() {
+        if (!PLUGIN_CONFIG.restock.enabled) {
+            return "unset";
+        }
+        return PLUGIN_CONFIG.restock.x + " " + PLUGIN_CONFIG.restock.y + " " + PLUGIN_CONFIG.restock.z;
+    }
+
+    private static boolean looksLikeStorage(String blockName) {
+        if (blockName == null) {
+            return false;
+        }
+        String name = blockName.toLowerCase();
+        return name.contains("chest")
+                || name.contains("barrel")
+                || name.contains("shulker_box")
+                || name.contains("hopper")
+                || name.contains("dispenser")
+                || name.contains("dropper");
     }
 
     private UUID resolveUuidByUsername(final String username) {

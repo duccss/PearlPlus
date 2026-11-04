@@ -7,8 +7,10 @@ import java.util.UUID;
 public class PearlPlusConfig {
     public final AutoLoadConfig autoLoad = new AutoLoadConfig();
     public final AutoDetectConfig autoDetect = new AutoDetectConfig();
+    public final RestockConfig restock = new RestockConfig();
 
     public String defaultPearlId = "Base";
+    public boolean debug = false;
 
     public final Map<UUID, PlayerPearls> players = new LinkedHashMap<>();
     public final Map<UUID, WhitelistedPlayer> whitelist = new LinkedHashMap<>();
@@ -28,6 +30,13 @@ public class PearlPlusConfig {
         public boolean temporaryMode = false;
         public boolean distanceCheck = false;
         public int temporaryRemovalRange = 32; //blocks
+    }
+
+    public static final class RestockConfig {
+        public boolean enabled = false;
+        public int x;
+        public int y;
+        public int z;
     }
 
     public static final class PlayerPearls {

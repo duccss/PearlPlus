@@ -172,7 +172,7 @@ public class AutoLoadModule extends Module {
             sendClientPacketAsync(ChatUtil.getWhisperChatPacket(name, "Loading pearl " + requestedPearl + "... "+pearlFeedback));
         }
 
-        pearlManager.loadPearl(pearl, name);
+        pearlManager.loadPearl(pearl, name, uuid);
         
     }
 }

@@ -1,11 +1,15 @@
 package dev.zenith.pearlplus;
 
-import com.zenith.plugin.api.PluginAPI;
+import com.zenith.event.client.ClientBotTick;
 import com.zenith.plugin.api.Plugin;
+import com.zenith.plugin.api.PluginAPI;
 import com.zenith.plugin.api.ZenithProxyPlugin;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import dev.zenith.pearlplus.command.*;
 import dev.zenith.pearlplus.module.*;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+
+import static com.github.rfresh2.EventConsumer.of;
+import static com.zenith.Globals.EVENT_BUS;
 
 @Plugin(
     id = BuildConstants.PLUGIN_ID,
@@ -30,6 +34,18 @@ public class PearlPlusPlugin implements ZenithProxyPlugin {
         API.registerCommand(new PearlPlusCommand());
         API.registerModule(new AutoLoadModule());
         API.registerModule(new AutoDetectModule());
+        API.registerModule(new PearlRestockModule());
+        EVENT_BUS.subscribe(
+                this,
+                of(ClientBotTick.class, event -> {
+                    PearlManager.tickPendingLookClick();
+                    PearlManager.tickPendingClaimReleases();
+                }),
+                of(ClientBotTick.Stopped.class, event -> {
+                    PearlManager.cancelPendingLookClick();
+                    PearlManager.cancelPendingClaimReleases();
+                })
+        );
 
         LOG.info("PearlPlus Plugin loaded!");
     }

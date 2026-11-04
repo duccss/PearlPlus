@@ -3,7 +3,7 @@
 PearlPlus automatically detects new stasis pearls and registers them with its own pearl loader. Pearl throwers can then load these pearls through chat whispers.
 The config is saved to `plugins/config/pearlplus.json`
 
-In Zenith run `plugins download https://github.com/duccss/PearlPlus/releases/download/2.1.0/PearlPlus-2.1.0.jar` or download the [lastest build](https://github.com/duccss/PearlPlus/releases/latest) and place the jar file in your proxy's plugin folder.
+In Zenith run `plugins download https://github.com/duccss/PearlPlus/releases/download/2.2.1/PearlPlus-2.2.1.jar` or download the [latest build](https://github.com/duccss/PearlPlus/releases/latest) and place the jar file in your proxy's plugin folder.
 
 This plugin **WILL NOT WORK** unless a correct `chatschema` is set in Zenith. Most vanilla servers like 2b2t and Constantiam don't require you to set one but other servers with custom whisper builders for example 9b9t will need one. Please check the wiki [here](https://wiki.2b2t.vc/Commands/#chatschema).
 You might also need to set the whisper command for the server you're playing on using `extraChat whisperCommand <command>` to allow the bot to whisper back.
@@ -27,6 +27,9 @@ pearlplus add <playerName> <pearlId> <x> <y> <z>
 ```
 ```bash
 pearlplus del <playerName> <pearlId>
+```
+```bash
+pearlplus load <playerName> <pearlId>
 ```
 ```bash
 pearlplus list
@@ -62,7 +65,7 @@ pearlplus distancecheck <on/off>
 ```bash
 pearlplus whitelist <on/off>
 pearlplus whitelist add <playername>
-pearlplus whitelist del <playername>
+pearlplus whitelist remove <playername>
 pearlplus whitelist list
 pearlplus whitelist clear
 ```
@@ -70,6 +73,19 @@ pearlplus whitelist clear
 ```bash
 pearlplus droppearlafterload <on/off>
 ```
+
+```bash
+pearlplus set-restock-container <x> <y> <z>
+pearlplus set-restock-container clear
+```
+
+After a successful load, if the bot has no ender pearls left, it walks to the configured container (chest, barrel, shulker, etc.) and takes one stack.
+
+```bash
+pearlplus debug <true/false>
+```
+
+When debug is on, the terminal prints the trapdoor (and nearby candidates) the bot is about to click.
 
 ### In-game Whisper Commands
 
@@ -84,6 +100,9 @@ There are a few in-game commands players can whisper to the bot to manage their 
 ### Usage
 
 Simply throw a new ender pearl and once it becomes stable the bot will register it, setting the pearlID as "Base" by default with an incrementing number for subsequent pearls. That player can now whisper `load` (or your configured load command) to the zenith bot and the bot will load the pearl. Players with multiple pearls can add the pearlID after the trigger word to have a specific pearl loaded. Players will receive a warning whisper when loading a stasis chamber where a pearl isn't detected.
+
+A chamber is claimed by the player who last registered a pearl there. If someone else throws into that column while the claim is still stored, they are whispered that the spot already belongs to the owner and are not registered. After a successful load the claim is released, so a different player can reuse the same chamber. If the pearl is still present a few seconds after the click, the claim is kept.
+
 ```bash
 /w <botName> load <optionalID> 
 ```
@@ -114,6 +133,6 @@ These settings will stop your pearl bot walking off and prevent it breaking/plac
 
 ### Building The Plugin
 
-Clone the repo or download the zip.
+Clone [https://github.com/duccss/PearlPlus](https://github.com/duccss/PearlPlus) or download the zip.
 Run `chmod +x gradlew`
  then `./gradlew build`
